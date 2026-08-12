@@ -1,0 +1,83 @@
+---
+title: Crime Scene AI — Smart Evidence Capture Assistant
+emoji: 🕵️
+colorFrom: red
+colorTo: yellow
+sdk: gradio
+sdk_version: 4.44.0
+app_file: gradio_app.py
+pinned: false
+license: mit
+---
+
+# Crime Scene AI — Smart Evidence Capture Assistant
+
+Live demo: field officer uploads a crime-scene photo → the vision layer
+extracts objects / stains / text (each with confidence + source + basis) →
+the reasoning layer drafts a report in **both English and Hindi** → the
+officer **edits and confirms** the narrative → only the confirmed report is
+logged to the case file with chain-of-custody metadata → pattern matching
+against past confirmed cases.
+
+## What runs out of the box
+
+This Space is fully functional with **zero configuration** (offline demo mode):
+
+| Component | Behavior in this Space |
+|---|---|
+| Object detection | HSV/geometry heuristics (`source: "heuristic"`) — real YOLOv8n is opt-in via `backend/requirements-ai.txt` |
+| Blood-like stain | Red-hue HSV heuristic + morphology + area/saturation basis (never a verdict) |
+| OCR | Optional — install `pytesseract` + a Tesseract binary (`apt install tesseract-ocr` on Linux) to enable |
+| Reasoning | Offline mock LLM (`source: "mock"`) — set `OPENAI_API_KEY` as a Space secret to use a real LLM |
+| Case log | SQLite, per-instance (ephemeral — fine for a demo) |
+
+Everything degrades gracefully and always explains *why* in `processing_notes` —
+no silent behavior.
+
+## How to use
+
+1. Open the app (it starts on the root URL of this Space).
+2. Upload any scene photo (phone photos work best — EXIF GPS/time are read
+   automatically; you can also type coordinates).
+3. Review the draft: objects, stain candidates, OCR text, narrative
+   (English + Hindi), anomaly flags and next steps.
+4. Edit the narrative if needed, then **Confirm & log case** — the confirmed
+   report enters the case file with an audit trail and pattern matches.
+
+## Self-hosting / local run
+
+```bash
+python -m venv .venv && .\.venv\Scripts\activate   # (Linux: source .venv/bin/activate)
+pip install -r requirements.txt
+python gradio_app.py      # http://localhost:7860
+```
+
+## Enabling the real models (optional)
+
+| Component | How | Effect |
+|---|---|---|
+| YOLOv8n objects | `pip install -r backend/requirements-ai.txt`; first run downloads `yolov8n.pt` (~6 MB) | `source: "yolo"` detections (knife/car/bag/…) |
+| OCR (Tesseract) | `pip install pytesseract` + Tesseract binary (`apt install tesseract-ocr`) | `ocr` entries (reads Devanagari better with EasyOCR) |
+| Real LLM reasoning | add `OPENAI_API_KEY` (and optionally `OPENAI_BASE_URL`, `OPENAI_MODEL`) as a Space secret | `llm.source: "openai"` narrative |
+
+## Honest limitations (demo-grade, not evidence-grade)
+
+- Detections are **suggestions for triage**, never admissible evidence. The
+  officer-confirmation step is the evidence boundary.
+- The "blood-like stain" heuristic detects red-dominant regions — it cannot
+  distinguish blood from paint/rust/curry, and the report says so.
+- ELA tamper flag is a heuristic, always reported with `"inconclusive"` framing.
+- Pattern matching scores shared object categories — a triage aid, not
+  case-linking evidence.
+- Case data is stored in the Space's ephemeral filesystem and is reset on
+  restart.
+
+## API
+
+The FastAPI backend still exposes its full API surface — used for the main
+React demo (`GET /api/health`, `POST /api/upload`, `POST /api/cases`,
+`GET /api/cases[/{id}]`, `GET /api/images/{image_id}`). This Gradio Space
+drives the same pipeline (`backend/app/pipeline.py`) directly.
+
+Built for the Smart India Hackathon (SIH) demo track. Backend FastAPI ·
+frontend React (Vite) · this card is a Gradio Space.
