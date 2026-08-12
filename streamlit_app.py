@@ -28,6 +28,7 @@ if "analysis" not in st.session_state:
     st.session_state.analysis = None
     st.session_state.image_id = None
     st.session_state.narrative = ""
+    st.session_state.overlay_bytes = None
 
 
 def _fmt_basis(basis):
@@ -51,6 +52,33 @@ def _df(rows, headers):
     return pd.DataFrame(data)
 
 
+def annotate(img_bgr, objects):
+    """Draw detection boxes + class labels on a copy of the image."""
+    out = img_bgr.copy()
+    colors = {
+        "person": (0, 200, 0),
+        "weapon": (0, 0, 255),
+        "vehicle": (255, 128, 0),
+        "container": (0, 200, 255),
+        "personal item": (255, 0, 255),
+        "electronic device": (200, 0, 200),
+        "discarded item": (180, 180, 0),
+    }
+    for d in objects:
+        b = d.get("bbox")
+        if not b:
+            continue
+        x1, y1, x2, y2 = (int(round(b[k])) for k in ("x1", "y1", "x2", "y2"))
+        color = colors.get(d.get("category"), (0, 255, 255))
+        cv2.rectangle(out, (x1, y1), (x2, y2), color, 2)
+        label = f"{d.get('class', '?')} {d.get('confidence', 0):.2f}"
+        (tw, th), _ = cv2.getTextSize(label, cv2.FONT_HERSHEY_SIMPLEX, 0.55, 1)
+        ty = y1 - 4 if y1 - th - 6 > 0 else y2 + th + 4
+        cv2.rectangle(out, (x1, ty - th - 4), (x1 + tw + 4, ty + 4), color, -1)
+        cv2.putText(out, label, (x1 + 2, ty), cv2.FONT_HERSHEY_SIMPLEX, 0.55, (0, 0, 0), 1)
+    return out
+
+
 def analyze(raw: bytes, officer_id, lat, lng):
     try:
         analysis = run_pipeline(raw)
@@ -61,6 +89,9 @@ def analyze(raw: bytes, officer_id, lat, lng):
     image_id = uuid.uuid4().hex[:12]
     img_bgr = cv2.imdecode(np.frombuffer(raw, np.uint8), cv2.IMREAD_COLOR)
     cv2.imwrite(str(config.IMAGES_DIR / f"{image_id}.jpg"), img_bgr, [cv2.IMWRITE_JPEG_QUALITY, 92])
+    annotated = annotate(img_bgr, analysis.get("objects", []))
+    ok, buf = cv2.imencode(".jpg", annotated, [cv2.IMWRITE_JPEG_QUALITY, 92])
+    st.session_state.overlay_bytes = buf.tobytes() if ok else None
 
     gps = analysis["metadata"].get("gps")
     if gps is None and lat and lng:
@@ -150,6 +181,9 @@ with col1:
 with col2:
     if uploaded:
         st.image(uploaded, width="stretch")
+        if st.session_state.get("overlay_bytes"):
+            st.caption("Analysis overlay — boxes are AI suggestions for triage, not evidence")
+            st.image(st.session_state.overlay_bytes, width="stretch")
 
 with col1:
     officer_id = st.text_input("Officer ID", placeholder="e.g. SUB-INSP-07")

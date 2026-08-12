@@ -137,10 +137,12 @@ front-end — same pipeline, same human-in-the-loop flow, works fully offline:
    entry file `streamlit_app.py`, root `requirements.txt`.
 
 Notes: the app sleeps after ~12h idle and wakes with one click — open it a
-few minutes before presenting. YOLO/OCR are unavailable in the cloud (they
-need `requirements-ai.txt`/Tesseract); the app reports this in
-`processing_notes` by design and still runs the stain heuristic + offline
-mock reasoning + full confirm/log/pattern-match flow.
+few minutes before presenting. YOLO object detection runs in the cloud too
+via the bundled `yolov8n.onnx` + onnxruntime (torch-free fallback in
+`backend/app/vision/detector.py`). OCR (Tesseract) is unavailable in the
+cloud; the app reports it in `processing_notes` by design and still runs the
+stain heuristic + offline mock reasoning + full confirm/log/pattern-match
+flow.
 
 ## Honest-limitations section (put this in your SIH submission)
 
