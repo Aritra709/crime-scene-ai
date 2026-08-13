@@ -39,6 +39,12 @@ def _fmt_basis(basis):
     return "; ".join(str(b) for b in basis)
 
 
+def _pct(v):
+    if isinstance(v, (int, float)):
+        return f"{v * 100:.0f}%"
+    return v
+
+
 def _df(rows, headers):
     if not rows:
         return pd.DataFrame(columns=headers)
@@ -48,6 +54,8 @@ def _df(rows, headers):
         for h in headers:
             v = r.get(h, "")
             row[h] = ", ".join(v) if isinstance(v, list) else v
+            if h == "confidence":
+                row[h] = _pct(row[h])
         data.append(row)
     return pd.DataFrame(data)
 
@@ -87,14 +95,14 @@ def annotate(img_bgr, analysis):
         x1, y1, x2, y2 = (int(round(b[k])) for k in ("x1", "y1", "x2", "y2"))
         color = colors.get(d.get("category"), (0, 255, 255))
         cv2.rectangle(out, (x1, y1), (x2, y2), color, 2)
-        _label_chip(out, x1, y1, x2, y2, f"{d.get('class', '?')} {d.get('confidence', 0):.2f}", color)
+        _label_chip(out, x1, y1, x2, y2, f"{d.get('class', '?')} {_pct(d.get('confidence', 0))}", color)
     for s in analysis.get("stains", []):
         b = s.get("bbox")
         if not b:
             continue
         x1, y1, x2, y2 = (int(round(b[k])) for k in ("x1", "y1", "x2", "y2"))
         _dashed_rect(out, x1, y1, x2, y2, (0, 0, 220), thickness=2)
-        _label_chip(out, x1, y1, x2, y2, f"blood stain {s.get('confidence', 0):.2f}", (0, 0, 220))
+        _label_chip(out, x1, y1, x2, y2, f"blood stain {_pct(s.get('confidence', 0))}", (0, 0, 220))
     return out
 
 
