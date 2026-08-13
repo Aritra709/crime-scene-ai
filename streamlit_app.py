@@ -316,12 +316,20 @@ html, body, [class*="css"], [data-testid="stApp"] {
   100% { left: 130%; }
 }
 
+@keyframes csSlideBlur {
+  0%   { filter: blur(0px); }
+  35%  { filter: blur(7px); }
+  75%  { filter: blur(3px); }
+  100% { filter: blur(0px); }
+}
+
 html, body { scroll-behavior: smooth; }
 
 @media (prefers-reduced-motion: reduce) {
   .bg-fx .orb, .bg-fx .grid, .bg-fx .slide, .hero h1,
   [data-testid="stVerticalBlockBorderWrapper"], [data-testid="stMetric"],
-  [data-testid="stBaseButton-secondary"]::after, .stButton button::after, .stDownloadButton button::after {
+  [data-testid="stBaseButton-secondary"]::after, .stButton button::after, .stDownloadButton button::after,
+  div[data-testid="stColumn"]:has(div[data-testid="stFileUploader"]) {
     animation: none !important;
   }
   [data-testid="stVerticalBlockBorderWrapper"] { transform: none !important; }
@@ -338,6 +346,7 @@ html, body { scroll-behavior: smooth; }
   }
   [data-testid="stColumn"]:has(div[data-testid="stFileUploader"]) {
     transform: none !important;
+    animation: none !important;
   }
   [data-testid="stHorizontalBlock"]:has([data-testid="stMetric"]) {
     display: grid;
@@ -804,12 +813,14 @@ with col1:
 
     placed = "calc(100% + 0.5rem)" if not bool(uploaded) else "0px"
     slide = "0.55s ease-in-out" if bool(uploaded) else "none"
+    blur = "csSlideBlur 0.55s ease-in-out" if bool(uploaded) else "none"
     st.markdown(f"""
     <style>
     div[data-testid="stColumn"]:has(div[data-testid="stFileUploader"]) {{
       transform: translateX({placed});
       transition: transform {slide};
-      will-change: transform;
+      animation: {blur};
+      will-change: transform, filter;
     }}
     </style>""", unsafe_allow_html=True)
 
