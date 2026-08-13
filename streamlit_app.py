@@ -149,11 +149,16 @@ def draw_pins(img, markers, photo):
 def draw_scale(img, scale, photo):
     if not scale or scale.get("photo") != photo:
         return
-    cv2.line(img, scale["start"], scale["end"], (255, 0, 255), 2)
-    cv2.circle(img, scale["start"], 5, (255, 0, 255), -1)
-    cv2.circle(img, scale["end"], 5, (255, 0, 255), -1)
-    label = f"calib: {scale['px_len']} px = {scale.get('known_cm') or '?'} cm"
-    _pin_chip(img, scale["end"][0], scale["end"][1], label, (255, 0, 255))
+    (x1, y1), (x2, y2) = scale["start"], scale["end"]
+    cv2.line(img, (x1, y1), (x2, y2), (255, 0, 255), 3)
+    cv2.circle(img, (x1, y1), 6, (255, 0, 255), -1)
+    cv2.circle(img, (x2, y2), 6, (255, 0, 255), -1)
+    cm = scale.get("known_cm")
+    if cm:
+        label = f"{cm:g} cm  /  {scale['px_len']} px"
+    else:
+        label = f"line: {scale['px_len']} px"
+    _pin_chip(img, (x1 + x2) // 2, (y1 + y2) // 2, label, (255, 0, 255))
 
 
 def canvas_bgr(photo):
@@ -557,15 +562,16 @@ with col2:
             )
         scale = st.session_state.scale
         if scale and scale.get("photo") == photo:
-            st.markdown(f"**Scale reference** on `{photo}`: line is {scale['px_len']} px long.")
+            st.markdown(f"**Scale reference** on `{photo}`: the selected line is "
+                        f"{scale['px_len']} px long (magenta, drawn on the photo).")
             known_cm = st.number_input(
                 "Known length of the reference line (cm)", min_value=0.1,
                 value=10.0, step=1.0, key=f"known_cm_{photo}",
             )
             scale["known_cm"] = float(known_cm)
             scale["px_per_cm"] = scale["px_len"] / float(known_cm)
-            st.caption(f"→ {scale['px_per_cm']:.2f} px/cm. Sizes assume objects lie near the "
-                       "calibration plane (approximate).")
+            st.caption(f"Selected line = **{known_cm:g} cm** -> {scale['px_per_cm']:.2f} px/cm. "
+                       "Sizes assume objects lie near the calibration plane (approximate).")
             if st.button("Clear scale reference", key=f"clr_scale_{photo}"):
                 st.session_state.scale = None
                 st.session_state.scale_start = None
