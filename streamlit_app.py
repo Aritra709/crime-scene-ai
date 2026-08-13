@@ -45,6 +45,9 @@ _DEFAULTS = {
     "marker_seq": 0,
     "scale": None,
     "scale_start": None,
+    "measurements": [],
+    "measure_seq": 0,
+    "measure_start": None,
     "photo_view": None,
     "_canvas_cache": {},
 }
@@ -162,10 +165,26 @@ def draw_scale(img, scale, photo):
     _pin_chip(img, (x1 + x2) // 2, (y1 + y2) // 2, label, (255, 0, 255))
 
 
+def draw_measurements(img, measurements, photo, pxcm):
+    for m in measurements:
+        if m.get("photo") != photo:
+            continue
+        (x1, y1), (x2, y2) = m["start"], m["end"]
+        color = (255, 215, 0)
+        cv2.line(img, (x1, y1), (x2, y2), color, 2)
+        cv2.circle(img, (x1, y1), 5, color, -1)
+        cv2.circle(img, (x2, y2), 5, color, -1)
+        cm = m.get("cm")
+        label = f"{cm:.1f} cm" if cm else f"{m['px_len']} px"
+        _pin_chip(img, (x1 + x2) // 2, (y1 + y2) // 2, label, color)
+
+
 def canvas_bgr(photo):
     img = st.session_state.images[photo]["bgr"].copy()
     img = annotate(img, st.session_state.analyses[photo])
     draw_pins(img, st.session_state.markers, photo)
+    pxcm = (st.session_state.scale or {}).get("px_per_cm")
+    draw_measurements(img, st.session_state.measurements, photo, pxcm)
     draw_scale(img, st.session_state.scale, photo)
     return img
 
@@ -227,6 +246,9 @@ def analyze_all(files, officer_id, lat, lng):
     st.session_state.marker_seq = 0
     st.session_state.scale = None
     st.session_state.scale_start = None
+    st.session_state.measurements = []
+    st.session_state.measure_seq = 0
+    st.session_state.measure_start = None
     st.session_state.merged = merge_analyses(analyses)
     st.session_state.merged["suggestions"] = reasoning.reason(st.session_state.merged)
     st.session_state.narrative = ""
@@ -260,6 +282,7 @@ def confirm(officer_id, narrative, lat, lng):
         "ai_report": merged.get("suggestions", {}),
         "processing_notes": merged.get("processing_notes", []),
         "evidence_markers": st.session_state.markers,
+        "measurements": st.session_state.measurements,
         "scale": st.session_state.scale,
         "photos": [{"name": n, "image_id": im["image_id"]} for n, im in images.items()],
     }
@@ -287,6 +310,9 @@ def case_card(c):
     md += "- Photos: " + ", ".join(f"`{p['name']}` (`{p['image_id']}`)" for p in photos) + "\n"
     markers = c.get("evidence_markers", [])
     md += f"- Evidence markers: {len(markers)}\n"
+    measurements = c.get("measurements", [])
+    if measurements:
+        md += "- Measured distances: " + ", ".join(f"{m['cm']} cm" for m in measurements) + "\n"
     scale = c.get("scale")
     if scale and scale.get("known_cm"):
         md += (f"- Scale reference on `{scale['photo']}`: {scale['px_len']} px = "
@@ -344,6 +370,7 @@ def _report_dict(detail):
         "objects": clean(detail.get("objects", [])),
         "stains": clean(detail.get("stains", [])),
         "evidence_markers": clean(detail.get("evidence_markers", [])),
+        "measurements": clean(detail.get("measurements", [])),
         "scale": detail.get("scale"),
         "tamper": detail.get("tamper", {}),
         "processing_notes": detail.get("processing_notes", []),
@@ -444,6 +471,11 @@ def _pdf_report(detail):
         for m in detail["evidence_markers"]:
             line(f"- #{m['id']} · {m.get('photo', '')} · px({m['x']}, {m['y']}) · {m.get('note', '')}")
 
+    if detail.get("measurements"):
+        sec("Measured distances")
+        for m in detail["measurements"]:
+            line(f"- #{m['id']} · {m.get('photo', '')} · {m.get('cm', '?')} cm ({m.get('px_len', '?')} px)")
+
     sec("Audit trail")
     for e in detail.get("log", []):
         line(f"- {e['ts']} · {e['actor']} · {e['action']}")
@@ -457,6 +489,9 @@ def _reset_derived():
     st.session_state.marker_seq = 0
     st.session_state.scale = None
     st.session_state.scale_start = None
+    st.session_state.measurements = []
+    st.session_state.measure_seq = 0
+    st.session_state.measure_start = None
     st.session_state.narrative = ""
 
 
@@ -506,6 +541,29 @@ def _on_canvas_click():
                     "px_len": px_len, "known_cm": None, "px_per_cm": None,
                 }
                 st.session_state.scale_start = None
+    elif mode == "Measure line":
+        scale = st.session_state.get("scale")
+        pxcm = (scale or {}).get("px_per_cm") if scale and scale.get("photo") == photo else None
+        if not pxcm:
+            st.warning("Set a scale reference first (Set scale reference mode), then measure lines.")
+            return
+        ms = st.session_state.get("measure_start")
+        if ms is None or ms.get("photo") != photo:
+            st.session_state.measure_start = {"photo": photo, "x": x, "y": y}
+        else:
+            px_len = int(round(math.hypot(x - ms["x"], y - ms["y"])))
+            if px_len < 5:
+                st.warning("Pick the two ends at least ~5 px apart, then re-click the first end.")
+                st.session_state.measure_start = None
+            else:
+                st.session_state.measure_seq += 1
+                st.session_state.measurements.append({
+                    "id": st.session_state.measure_seq, "photo": photo,
+                    "start": (ms["x"], ms["y"]), "end": (x, y),
+                    "px_len": px_len, "cm": round(px_len / pxcm, 1),
+                    "ts": datetime.now(timezone.utc).isoformat(),
+                })
+                st.session_state.measure_start = None
 
 
 st.markdown(
@@ -546,7 +604,7 @@ with col2:
             photo = st.radio("View photo", names, index=names.index(photo), horizontal=True, key="photo_sel")
         st.session_state.photo_view = photo
         mode = st.radio(
-            "Canvas mode", ["View overlay", "Add evidence markers", "Set scale reference"],
+            "Canvas mode", ["View overlay", "Add evidence markers", "Set scale reference", "Measure line"],
             horizontal=True, key="canvas_mode",
         )
         canvas = canvas_bgr(photo)
@@ -561,6 +619,7 @@ with col2:
         finger = "|".join((
             photo, mode,
             ";".join(f"{m['id']}:{m.get('photo', '')}:{m['x']}:{m['y']}" for m in st.session_state.markers),
+            ";".join(f"{m['id']}:{m.get('photo', '')}:{m['px_len']}" for m in st.session_state.measurements),
             repr(st.session_state.scale),
         ))
         cache = st.session_state["_canvas_cache"]
@@ -576,10 +635,20 @@ with col2:
         else:
             if mode == "Add evidence markers":
                 st.caption("Click anywhere on the photo to drop a numbered evidence marker.")
-            elif st.session_state.scale_start is None:
-                st.caption(f"Step 1/3: click the first end of a known-length line on '{photo}'.")
+            elif mode == "Set scale reference":
+                if st.session_state.scale_start is None:
+                    st.caption(f"Step 1/3: click the first end of a known-length line on '{photo}'.")
+                else:
+                    st.caption("Step 2/3: click the second end of the line (must be a different point).")
             else:
-                st.caption("Step 2/3: click the second end of the line (must be a different point).")
+                scale = st.session_state.scale
+                pxcm = (scale or {}).get("px_per_cm") if scale and scale.get("photo") == photo else None
+                if pxcm is None:
+                    st.caption("Set a scale reference first (Set scale reference mode) so line lengths can be computed.")
+                elif st.session_state.measure_start is None:
+                    st.caption("Click the first end of the line you want to measure.")
+                else:
+                    st.caption("Click the second end of the line to measure it.")
             streamlit_image_coordinates(
                 cache["rgb"], width=tw, height=th, key=f"cv_{photo}",
                 on_click=_on_canvas_click, image_format="JPEG", jpeg_quality=85,
@@ -595,11 +664,23 @@ with col2:
             scale["known_cm"] = float(known_cm)
             scale["px_per_cm"] = scale["px_len"] / float(known_cm)
             st.caption(f"Selected line = **{known_cm:g} cm** -> {scale['px_per_cm']:.2f} px/cm. "
-                       "Sizes assume objects lie near the calibration plane (approximate).")
+                       "Sizes assume objects lie near the calibration plane (approximate). "
+                       "Use 'Measure line' mode to measure any distance on the photo.")
             if st.button("Clear scale reference", key=f"clr_scale_{photo}"):
                 st.session_state.scale = None
                 st.session_state.scale_start = None
                 st.rerun()
+        measurements = st.session_state.measurements
+        if measurements:
+            st.markdown("### Measured lines")
+            for m in list(measurements):
+                r1, r2 = st.columns([4, 1])
+                r1.caption(f"#{m['id']} · {m['photo']} · **{m['cm']:.1f} cm** ({m['px_len']} px)")
+                if r2.button(f"Remove #{m['id']}", key=f"ms_del_{m['id']}"):
+                    st.session_state.measurements = [
+                        x for x in st.session_state.measurements if x["id"] != m["id"]
+                    ]
+                    st.rerun()
         markers = st.session_state.markers
         if markers:
             st.markdown("### Evidence markers")
