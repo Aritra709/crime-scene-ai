@@ -45,6 +45,7 @@ _MIGRATIONS = (
     "ALTER TABLE cases ADD COLUMN evidence_markers TEXT DEFAULT '[]'",
     "ALTER TABLE cases ADD COLUMN scale TEXT",
     "ALTER TABLE cases ADD COLUMN photos TEXT DEFAULT '[]'",
+    "ALTER TABLE cases ADD COLUMN ai_report TEXT",
 )
 
 
@@ -78,8 +79,8 @@ def insert_case(payload: dict, log_entries: list) -> str:
                 id, officer_id, image_id, image_path, gps_lat, gps_lng, captured_at,
                 status, created_at, narrative, original_narrative, next_steps,
                 anomaly_flags, objects, stains, ocr, tamper, metadata, llm_source,
-                processing_notes, evidence_markers, scale, photos
-            ) VALUES (?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?)""",
+                processing_notes, evidence_markers, scale, photos, ai_report
+            ) VALUES (?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?)""",
             (
                 case_id,
                 payload.get("officer_id") or "unknown",
@@ -104,6 +105,7 @@ def insert_case(payload: dict, log_entries: list) -> str:
                 json.dumps(payload.get("evidence_markers", []), ensure_ascii=False),
                 json.dumps(payload.get("scale"), ensure_ascii=False),
                 json.dumps(payload.get("photos", []), ensure_ascii=False),
+                json.dumps(payload.get("ai_report", {}), ensure_ascii=False),
             ),
         )
         for entry in log_entries:
@@ -214,6 +216,7 @@ def _row_detail(r: sqlite3.Row) -> dict:
         "evidence_markers": json.loads(r["evidence_markers"] or "[]"),
         "scale": json.loads(r["scale"] or "null"),
         "photos": json.loads(r["photos"] or "[]"),
+        "ai_report": json.loads(r["ai_report"] or "{}"),
     }
 
 

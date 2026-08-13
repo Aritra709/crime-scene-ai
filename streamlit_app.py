@@ -1,10 +1,11 @@
 """Streamlit Community Cloud front-end for Crime Scene AI.
 
-Human-in-the-loop demo: upload one or more photos -> explainable analysis
-draft (objects, stain candidates) -> click-to-drop numbered evidence markers
-+ a two-click reference scale for approximate size estimates (cm)
--> officer writes/confirms the narrative -> confirmed report logged to the
-case file with audit trail and pattern matches -> JSON/PDF report export.
+Human-in-the-loop demo: upload one or more photos -> explainable triage draft
+(objects, stain candidates, AI observation & suggestions, offline-safe) ->
+click-to-drop numbered evidence markers + a two-click reference scale for
+approximate size estimates (cm) -> officer writes/confirms the narrative ->
+confirmed report logged to the case file with audit trail and pattern
+matches -> JSON/PDF report export.
 """
 
 import json
@@ -27,7 +28,7 @@ if not hasattr(_st_img_elements, "UseColumnWith"):
     _st_img_elements.UseColumnWith = bool
 from streamlit_image_coordinates import streamlit_image_coordinates
 
-from app import config, db
+from app import config, db, reasoning
 from app.pipeline import run_pipeline
 
 db.init_db()
@@ -227,6 +228,7 @@ def analyze_all(files, officer_id, lat, lng):
     st.session_state.scale = None
     st.session_state.scale_start = None
     st.session_state.merged = merge_analyses(analyses)
+    st.session_state.merged["suggestions"] = reasoning.reason(st.session_state.merged)
     st.session_state.narrative = ""
     return True
 
@@ -247,14 +249,15 @@ def confirm(officer_id, narrative, lat, lng):
         "captured_at": merged.get("captured_at"),
         "narrative": narrative,
         "original_narrative": "",
-        "next_steps": [],
-        "anomaly_flags": [],
+        "next_steps": merged.get("suggestions", {}).get("next_steps", []),
+        "anomaly_flags": merged.get("suggestions", {}).get("anomaly_flags", []),
         "objects": merged.get("objects", []),
         "stains": merged.get("stains", []),
         "ocr": [],
         "tamper": merged.get("tamper", {}),
         "metadata": merged.get("metadata", {}),
-        "llm_source": "manual",
+        "llm_source": merged.get("suggestions", {}).get("source", "manual"),
+        "ai_report": merged.get("suggestions", {}),
         "processing_notes": merged.get("processing_notes", []),
         "evidence_markers": st.session_state.markers,
         "scale": st.session_state.scale,
@@ -289,6 +292,10 @@ def case_card(c):
         md += (f"- Scale reference on `{scale['photo']}`: {scale['px_len']} px = "
                f"{scale['known_cm']} cm — size estimates approximate\n")
     md += f"- Narrative: {c['narrative']}\n"
+    ai = c.get("ai_report") or {}
+    ai_flags = ai.get("anomaly_flags") or []
+    if ai_flags:
+        md += "\n**AI anomaly flags (triage draft):**\n" + "\n".join(f"- {f}" for f in ai_flags) + "\n"
     matches = c.get("matches", [])
     if matches:
         md += "\n**Pattern matches (triage aid):**\n"
@@ -333,6 +340,7 @@ def _report_dict(detail):
         "gps": detail.get("gps"),
         "photos": detail.get("photos", []),
         "narrative": detail["narrative"],
+        "ai_report": detail.get("ai_report", {}),
         "objects": clean(detail.get("objects", [])),
         "stains": clean(detail.get("stains", [])),
         "evidence_markers": clean(detail.get("evidence_markers", [])),
@@ -377,6 +385,17 @@ def _pdf_report(detail):
 
     sec("Narrative (confirmed)")
     line(detail["narrative"])
+
+    ai = detail.get("ai_report") or {}
+    if ai:
+        sec("AI observation report (triage draft - not evidence)")
+        line(f"Source: {ai.get('source', '?')} / {ai.get('model', '?')}")
+        if ai.get("narrative"):
+            line("Draft narrative: " + ai["narrative"])
+        for f in ai.get("anomaly_flags", []):
+            line("- FLAG: " + f)
+        for s in ai.get("next_steps", []):
+            line("- NEXT: " + s)
 
     matches = detail.get("matches", [])
     if matches:
@@ -531,6 +550,11 @@ with col2:
             horizontal=True, key="canvas_mode",
         )
         canvas = canvas_bgr(photo)
+        _s = st.session_state.scale
+        if _s and _s.get("photo") == photo:
+            _k = st.session_state.get(f"known_cm_{photo}", 10.0) or 10.0
+            _s["known_cm"] = float(_k)
+            _s["px_per_cm"] = _s["px_len"] / float(_k)
         oh, ow = canvas.shape[:2]
         tw = min(CANVAS_W, ow)
         th = max(1, int(round(oh * tw / ow)))
@@ -619,6 +643,28 @@ if merged:
     notes = merged.get("processing_notes", [])
     if notes:
         st.info("\n".join(f"- {n}" for n in dict.fromkeys(notes)))
+
+    sug = merged.get("suggestions") or {}
+    if sug:
+        source, model = sug.get("source"), sug.get("model")
+        if source == "mock":
+            mode_txt = "offline rule-based draft (no API key configured)"
+        else:
+            mode_txt = f"LLM draft ({source} / {model})"
+        st.markdown("## AI observations and suggestions (triage draft)")
+        st.caption(f"Draft by: {mode_txt} — suggestions only, never evidence; an officer signs the final case.")
+        flags = sug.get("anomaly_flags") or []
+        steps = sug.get("next_steps") or []
+        if flags:
+            st.markdown("**Anomaly flags:**\n" + "\n".join(f"- {f}" for f in flags))
+        if steps:
+            st.markdown("**Suggested next steps:**\n" + "\n".join(f"- {s}" for s in steps))
+        if sug.get("narrative"):
+            with st.expander("AI-drafted observation report"):
+                st.write(sug["narrative"])
+                if st.button("Use as narrative draft", key="use_ai_narrative"):
+                    st.session_state.narrative = sug["narrative"]
+                    st.rerun()
 
     st.markdown("## Officer confirmation (human-in-the-loop)")
     st.caption(f"Marks {len(st.session_state.markers)} evidence markers · "

@@ -72,6 +72,24 @@ at.radio[1].set_value("View overlay").run()
 assert not at.exception
 assert at.session_state["_canvas_cache"]["bytes"]
 
+# AI suggestions generated (offline rule-based draft, no key needed)
+sug = at.session_state["merged"]["suggestions"]
+assert sug.get("source") == "mock", sug
+assert sug.get("narrative") and sug.get("anomaly_flags") and sug.get("next_steps"), sug
+print("ai suggestions:", sug["source"], "| flags:", len(sug["anomaly_flags"]),
+      "| steps:", len(sug["next_steps"]))
+
+# scale label sync: change known-cm -> the canvas fingerprint must reflect it
+# on the SAME run (previously the canvas showed the previous run's length)
+at.radio[1].set_value("Set scale reference").run()
+at.session_state["scale"].update({"known_cm": 50.0, "px_per_cm": 0.0})
+at.session_state[f"known_cm_{photo}"] = 50.0
+at.run()
+assert not at.exception
+finger = at.session_state["_canvas_cache"]["finger"]
+assert "2.0" in finger, "canvas fingerprint must use the current known length"
+assert abs(at.session_state["scale"]["px_per_cm"] - 2.0) < 1e-9
+
 # confirm flow
 for i, b in enumerate(at.get("button")):
     if b.label.startswith("Confirm"):
@@ -82,6 +100,9 @@ assert not at.exception
 detail = at.session_state["last_case"]
 assert detail and detail.get("evidence_markers") and detail.get("scale"), detail
 assert detail["scale"]["px_per_cm"] > 0
+ai = detail.get("ai_report") or {}
+assert ai.get("source") == "mock" and ai.get("anomaly_flags"), ai
+assert detail.get("anomaly_flags"), "DB anomaly_flags must be populated from AI report"
 print("thumbs:", cache["rgb"].shape, "| case markers:", len(detail["evidence_markers"]),
       "| px_per_cm:", detail["scale"]["px_per_cm"])
 print("ALL OK")

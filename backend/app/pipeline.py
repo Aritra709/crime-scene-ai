@@ -1,10 +1,10 @@
 """Pipeline orchestration: image bytes → structured, explainable analysis.
 
 Runs the vision modules (object detection, stain candidates, tamper/EXIF)
-and collects every degradation note. OCR and LLM-reasoning tiers are removed
-from the demo runtime so the app needs no API keys and never uploads photos
-off-device; every missing component is still surfaced in processing_notes
-(no silent degradation).
+and collects every degradation note. Reasonings runs with an OpenAI-compatible
+key when configured, otherwise as an offline rule-based draft (no key needed);
+every missing component is still surfaced in processing_notes (no silent
+degradation). The app never uploads photos off-device.
 """
 
 import cv2
