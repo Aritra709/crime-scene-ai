@@ -91,34 +91,20 @@ finger = at.session_state["_canvas_cache"]["finger"]
 assert "2.0" in finger, "canvas fingerprint must use the current known length"
 assert abs(at.session_state["scale"]["px_per_cm"] - 2.0) < 1e-9
 
-# measure line mode: captions render, and measurements draw + persist.
-# (component clicks can't be driven in AppTest; the two-click -> cm math is
-# replicated inline below against the app's px_per_cm conversion)
-at.radio[1].set_value("Measure line").run()
-assert not at.exception
-pxcm = at.session_state["scale"]["px_per_cm"]  # 2.0 from earlier step
+# line measurements are now auto-detected at analyze time (no manual mode);
+# an injected measurement still feeds the canvas fingerprint + confirm flow
 ow2, oh2 = at.session_state["images"][photo]["bgr"].shape[1], at.session_state["images"][photo]["bgr"].shape[0]
 tw2 = min(1100, ow2)
 th2 = max(1, int(round(oh2 * tw2 / ow2)))
 sx, sy = round(40 * ow2 / tw2), round(60 * oh2 / th2)
 ex = round(440 * ow2 / tw2)
 expected_px = round(math.hypot(ex - sx, 0))
-expected_cm = round(expected_px / pxcm, 1)
 at.session_state["measurements"] = [{"id": 1, "photo": photo,
                                      "start": (sx, sy), "end": (ex, sy),
-                                     "px_len": expected_px, "cm": expected_cm, "ts": "x"}]
+                                     "px_len": expected_px, "cm": None, "ts": "x"}]
 at.run()
 assert not at.exception
 assert str(expected_px) in at.session_state["_canvas_cache"]["finger"], at.session_state["_canvas_cache"]["finger"]
-at.session_state["measurements"] = []
-at.run()
-assert not at.exception
-
-# keep one measured line for the confirm flow
-at.session_state["measurements"] = [{"id": 1, "photo": photo,
-                                     "start": (sx, sy), "end": (ex, sy),
-                                     "px_len": expected_px, "cm": expected_cm, "ts": "x"}]
-at.run()
 
 # confirm flow
 for i, b in enumerate(at.get("button")):

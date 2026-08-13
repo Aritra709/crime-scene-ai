@@ -47,7 +47,6 @@ _DEFAULTS = {
     "scale_start": None,
     "measurements": [],
     "measure_seq": 0,
-    "measure_start": None,
     "photo_view": None,
     "_canvas_cache": {},
 }
@@ -189,6 +188,42 @@ def canvas_bgr(photo):
     return img
 
 
+def _auto_measure(photo, img_bgr):
+    """Auto-detect straight lines (Hough) and return px-length measurements."""
+    gray = cv2.cvtColor(img_bgr, cv2.COLOR_BGR2GRAY)
+    gray = cv2.GaussianBlur(gray, (5, 5), 0)
+    edges = cv2.Canny(gray, 50, 150)
+    segs = cv2.HoughLinesP(edges, 1, np.pi / 180, threshold=50,
+                           minLineLength=40, maxLineGap=12)
+    if segs is None:
+        return []
+
+    def _dup(k, px, py):
+        (ax, ay), (bx, by) = k["start"], k["end"]
+        l = math.hypot(bx - ax, by - ay) or 1
+        dist = abs((bx - ax) * (ay - py) - (ax - px) * (by - ay)) / l
+        ang = abs(k["angle"] - math.degrees(math.atan2(by - ay, bx - ax)) % 180)
+        return min(ang, 180 - ang) <= 8 and dist <= 30
+
+    kept = []
+    for (x1, y1, x2, y2) in segs[:, 0]:
+        px_len = int(round(math.hypot(x2 - x1, y2 - y1)))
+        if px_len < 40:
+            continue
+        mx, my = (x1 + x2) // 2, (y1 + y2) // 2
+        if any(_dup(k, mx, my) for k in kept):
+            continue
+        kept.append({
+            "photo": photo, "start": (int(x1), int(y1)), "end": (int(x2), int(y2)),
+            "px_len": px_len,
+            "angle": float(math.degrees(math.atan2(y2 - y1, x2 - x1)) % 180),
+        })
+    kept.sort(key=lambda k: k["px_len"], reverse=True)
+    for m in kept:
+        m.pop("angle", None)
+    return kept[:10]
+
+
 def merge_analyses(analyses):
     objs, stains, notes = [], [], []
     first = next(iter(analyses.values()))
@@ -248,7 +283,12 @@ def analyze_all(files, officer_id, lat, lng):
     st.session_state.scale_start = None
     st.session_state.measurements = []
     st.session_state.measure_seq = 0
-    st.session_state.measure_start = None
+    for name, im in images.items():
+        for m in _auto_measure(name, im["bgr"]):
+            st.session_state.measure_seq += 1
+            m["id"] = st.session_state.measure_seq
+            m["ts"] = datetime.now(timezone.utc).isoformat()
+            st.session_state.measurements.append(m)
     st.session_state.merged = merge_analyses(analyses)
     st.session_state.merged["suggestions"] = reasoning.reason(st.session_state.merged)
     st.session_state.narrative = ""
@@ -312,7 +352,8 @@ def case_card(c):
     md += f"- Evidence markers: {len(markers)}\n"
     measurements = c.get("measurements", [])
     if measurements:
-        md += "- Measured distances: " + ", ".join(f"{m['cm']} cm" for m in measurements) + "\n"
+        md += "- Measured distances: " + ", ".join(
+            f"{m['cm']} cm" if m.get("cm") else f"{m['px_len']} px" for m in measurements) + "\n"
     scale = c.get("scale")
     if scale and scale.get("known_cm"):
         md += (f"- Scale reference on `{scale['photo']}`: {scale['px_len']} px = "
@@ -474,7 +515,9 @@ def _pdf_report(detail):
     if detail.get("measurements"):
         sec("Measured distances")
         for m in detail["measurements"]:
-            line(f"- #{m['id']} · {m.get('photo', '')} · {m.get('cm', '?')} cm ({m.get('px_len', '?')} px)")
+            line(f"- #{m['id']} · {m.get('photo', '')} · "
+                 f"{m.get('cm', '?')} cm ({m.get('px_len', '?')} px)" if m.get("cm")
+                 else f"- #{m['id']} · {m.get('photo', '')} · {m.get('px_len', '?')} px")
 
     sec("Audit trail")
     for e in detail.get("log", []):
@@ -491,7 +534,6 @@ def _reset_derived():
     st.session_state.scale_start = None
     st.session_state.measurements = []
     st.session_state.measure_seq = 0
-    st.session_state.measure_start = None
     st.session_state.narrative = ""
 
 
@@ -541,29 +583,6 @@ def _on_canvas_click():
                     "px_len": px_len, "known_cm": None, "px_per_cm": None,
                 }
                 st.session_state.scale_start = None
-    elif mode == "Measure line":
-        scale = st.session_state.get("scale")
-        pxcm = (scale or {}).get("px_per_cm") if scale and scale.get("photo") == photo else None
-        if not pxcm:
-            st.warning("Set a scale reference first (Set scale reference mode), then measure lines.")
-            return
-        ms = st.session_state.get("measure_start")
-        if ms is None or ms.get("photo") != photo:
-            st.session_state.measure_start = {"photo": photo, "x": x, "y": y}
-        else:
-            px_len = int(round(math.hypot(x - ms["x"], y - ms["y"])))
-            if px_len < 5:
-                st.warning("Pick the two ends at least ~5 px apart, then re-click the first end.")
-                st.session_state.measure_start = None
-            else:
-                st.session_state.measure_seq += 1
-                st.session_state.measurements.append({
-                    "id": st.session_state.measure_seq, "photo": photo,
-                    "start": (ms["x"], ms["y"]), "end": (x, y),
-                    "px_len": px_len, "cm": round(px_len / pxcm, 1),
-                    "ts": datetime.now(timezone.utc).isoformat(),
-                })
-                st.session_state.measure_start = None
 
 
 st.markdown(
@@ -604,7 +623,7 @@ with col2:
             photo = st.radio("View photo", names, index=names.index(photo), horizontal=True, key="photo_sel")
         st.session_state.photo_view = photo
         mode = st.radio(
-            "Canvas mode", ["View overlay", "Add evidence markers", "Set scale reference", "Measure line"],
+            "Canvas mode", ["View overlay", "Add evidence markers", "Set scale reference"],
             horizontal=True, key="canvas_mode",
         )
         canvas = canvas_bgr(photo)
@@ -640,15 +659,6 @@ with col2:
                     st.caption(f"Step 1/3: click the first end of a known-length line on '{photo}'.")
                 else:
                     st.caption("Step 2/3: click the second end of the line (must be a different point).")
-            else:
-                scale = st.session_state.scale
-                pxcm = (scale or {}).get("px_per_cm") if scale and scale.get("photo") == photo else None
-                if pxcm is None:
-                    st.caption("Set a scale reference first (Set scale reference mode) so line lengths can be computed.")
-                elif st.session_state.measure_start is None:
-                    st.caption("Click the first end of the line you want to measure.")
-                else:
-                    st.caption("Click the second end of the line to measure it.")
             streamlit_image_coordinates(
                 cache["rgb"], width=tw, height=th, key=f"cv_{photo}",
                 on_click=_on_canvas_click, image_format="JPEG", jpeg_quality=85,
@@ -663,16 +673,24 @@ with col2:
             )
             scale["known_cm"] = float(known_cm)
             scale["px_per_cm"] = scale["px_len"] / float(known_cm)
+            pxcm = scale["px_per_cm"]
+            for m in st.session_state.measurements:
+                if m.get("photo") == photo:
+                    m["cm"] = round(m["px_len"] / pxcm, 1)
             st.caption(f"Selected line = **{known_cm:g} cm** -> {scale['px_per_cm']:.2f} px/cm. "
                        "Sizes assume objects lie near the calibration plane (approximate). "
-                       "Use 'Measure line' mode to measure any distance on the photo.")
+                       "Detected lines are measured automatically (gold, drawn on the photo).")
             if st.button("Clear scale reference", key=f"clr_scale_{photo}"):
                 st.session_state.scale = None
                 st.session_state.scale_start = None
+                for m in st.session_state.measurements:
+                    if m.get("photo") == photo:
+                        m["cm"] = None
                 st.rerun()
         measurements = st.session_state.measurements
         if measurements:
-            st.markdown("### Measured lines")
+            st.markdown("### Auto-measured lines")
+            st.caption("Straight lines detected automatically — lengths in cm once a scale reference is set.")
             for m in list(measurements):
                 r1, r2 = st.columns([4, 1])
                 r1.caption(f"#{m['id']} · {m['photo']} · **{m['cm']:.1f} cm** ({m['px_len']} px)")
