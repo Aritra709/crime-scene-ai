@@ -24,7 +24,7 @@ from fpdf import FPDF
 import streamlit.elements.image as _st_img_elements
 if not hasattr(_st_img_elements, "UseColumnWith"):
     _st_img_elements.UseColumnWith = bool
-from streamlit_image_coordinates import streamlit_image_coordinates
+from st_canvas import streamlit_image_coordinates
 
 from app import config, db, reasoning
 from app.pipeline import run_pipeline
@@ -325,6 +325,30 @@ html, body { scroll-behavior: smooth; }
     animation: none !important;
   }
   [data-testid="stVerticalBlockBorderWrapper"] { transform: none !important; }
+}
+
+@media (max-width: 720px) {
+  [data-testid="stHorizontalBlock"]:has([data-testid="stColumn"]:has([data-testid="stFileUploader"])) {
+    flex-direction: column;
+  }
+  [data-testid="stHorizontalBlock"]:has([data-testid="stColumn"]:has([data-testid="stFileUploader"])) > [data-testid="stColumn"] {
+    width: 100% !important;
+    max-width: 100% !important;
+    flex-basis: auto !important;
+  }
+  [data-testid="stColumn"]:has([data-testid="stFileUploader"]) {
+    transform: none !important;
+  }
+  [data-testid="stHorizontalBlock"]:has([data-testid="stMetric"]) {
+    display: grid;
+    grid-template-columns: repeat(2, 1fr);
+    gap: 0.5rem;
+  }
+  [data-testid="stHorizontalBlock"]:has(input[placeholder^="Note for marker"]) {
+    flex-direction: column;
+  }
+  .hero h1 { font-size: 1.7rem !important; }
+  .hero .badge { font-size: 0.62rem !important; }
 }
 </style>
 """
@@ -829,11 +853,11 @@ with col2:
                 st.session_state["_canvas_cache"] = cache
             if mode == "View overlay":
                 st.caption("AI triage overlay — boxes are suggestions, not evidence")
-                st.image(cache["bytes"])
+                st.image(cache["bytes"], width="stretch")
             else:
                 st.caption("Click anywhere on the photo to drop a numbered evidence marker.")
                 streamlit_image_coordinates(
-                    cache["rgb"], width=tw, height=th, key=f"cv_{photo}",
+                    cache["rgb"], use_column_width="always", key=f"cv_{photo}",
                     on_click=_on_canvas_click, image_format="JPEG", jpeg_quality=85,
                 )
             markers = st.session_state.markers
