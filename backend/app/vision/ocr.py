@@ -1,11 +1,9 @@
-"""OCR for visible text / plates / notes — degrades cleanly, two engines.
+"""OCR for visible text / plates / notes — OPTIONAL (needs Tesseract binary).
 
-1. Tesseract via pytesseract when the binary is present (full control,
-   Devanagari possible with the right language packs).
-2. RapidOCR (PP-OCRv4 via onnxruntime) otherwise — pure pip install, no
-   system binary needed, so OCR works on hosted clouds too.
-
-When neither engine is usable the pipeline notes it rather than failing.
+Degrades cleanly: when pytesseract or the tesseract binary is missing, the
+engine reports availability=False and the pipeline notes it rather than failing.
+Model choice is you-the-practitioner's call at deployment (EasyOCR works
+offline too and handles Devanagari better than Tesseract for field use).
 """
 
 import os
@@ -22,52 +20,20 @@ class OcrEngine:
     def __init__(self):
         self.available = False
         self.reason = ""
-        self.mode = ""
-        self.r_engine = None
-
         try:
             import pytesseract  # noqa: F401
 
             if os.path.exists(TESSERACT_CMD):
                 pytesseract.pytesseract.tesseract_cmd = TESSERACT_CMD
-                if pytesseract.get_tesseract_version():
-                    self.mode = "tesseract"
-                    self.available = True
-        except Exception:
-            pass
-
-        if not self.available:
-            try:
-                from rapidocr_onnxruntime import RapidOCR
-
-                self.r_engine = RapidOCR()
-                self.mode = "rapidocr"
-                self.available = True
-            except Exception as exc:
-                self.reason = f"ocr-unavailable: pytesseract/Tesseract and RapidOCR both unavailable: {exc}"
+                self.available = bool(pytesseract.get_tesseract_version())
+            else:
+                self.reason = f"ocr-unavailable: tesseract binary not found at {TESSERACT_CMD}"
+        except Exception as exc:
+            self.reason = str(exc)
 
     def read(self, img_bgr) -> tuple[list, list[str]]:
         if not self.available:
-            return [], [f"ocr-unavailable: {self.reason or 'no OCR engine usable'}"]
-
-        if self.mode == "rapidocr":
-            try:
-                result, _ = self.r_engine(img_bgr)
-                out = []
-                for i, (box, text, score) in enumerate(result or []):
-                    xs = [float(p[0]) for p in box]
-                    ys = [float(p[1]) for p in box]
-                    out.append({
-                        "id": f"o{i}",
-                        "text": str(text),
-                        "confidence": round(float(score), 3),
-                        "bbox": {"x1": min(xs), "y1": min(ys), "x2": max(xs), "y2": max(ys)},
-                        "source": "ocr",
-                    })
-                return out, []
-            except Exception as exc:
-                return [], [f"ocr-error: {exc}"]
-
+            return [], ["ocr-unavailable: pytesseract and/or Tesseract binary not installed"]
         import pytesseract
 
         try:

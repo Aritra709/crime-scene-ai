@@ -3,4 +3,3 @@ numpy>=1.24
 opencv-python-headless>=4.9
 Pillow>=10.0
 onnxruntime>=1.18
-rapidocr-onnxruntime>=1.3
