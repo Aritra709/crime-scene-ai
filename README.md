@@ -155,29 +155,6 @@ GET  /api/images/{image_id}          original uploaded image
 GET  /api/health
 ```
 
-## 🌐 Deploying
-
-### Hugging Face Spaces (Docker Space, FastAPI + React on port 7860)
-
-```powershell
-git remote add space https://huggingface.co/spaces/<your-org>/<space-name>
-git push space main        # HF builds the Dockerfile automatically
-```
-
-- Space card: `README.md.hf` · Build: `Dockerfile` (multi-stage: `npm ci && npm run build` → python:3.11-slim with tesseract-ocr)
-- Optional LLM: add `OPENAI_API_KEY` as a Space secret (mock LLM used otherwise).
-
-### Streamlit Community Cloud (free, no credit card)
-
-1. Push the repo to GitHub (`.gitignore` already excludes `.venv`, `node_modules`, `backend/data`, `*.pt`).
-2. On https://share.streamlit.io → **Create app** → connect the GitHub repo, entry file `streamlit_app.py`, root `requirements.txt`.
-
-> Notes: the app sleeps after ~12h idle and wakes with one click. YOLO runs in
-> the cloud too via the bundled `yolov8n.onnx` + onnxruntime (torch-free
-> fallback). OCR (Tesseract) is unavailable in the cloud; the app reports it in
-> `processing_notes` by design and still runs the stain heuristic + offline
-> mock reasoning + full confirm/log/pattern-match flow.
-
 ## ⚠️ Honest limitations (demo-grade, not evidence-grade)
 
 - Detections are **suggestions for triage**, never admissible evidence. The officer-confirmation step is the evidence boundary.
@@ -190,3 +167,7 @@ git push space main        # HF builds the Dockerfile automatically
 [MIT](LICENSE)
 
 Built for the **Smart India Hackathon (SIH)** demo track.
+
+## 👤 Author
+
+[Aritra Barman](https://github.com/Aritra709) — [GitHub](https://github.com/Aritra709)
