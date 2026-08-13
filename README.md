@@ -27,24 +27,6 @@ offline-capable.**
 
 ---
 
-## 📑 Table of Contents
-
-- [✨ What it does](#-what-it-does)
-- [🧠 Key features](#-key-features)
-- [⚖️ Design principles](#️-design-principles)
-- [🏗️ Architecture](#️-architecture)
-- [📦 Tech stack](#-tech-stack)
-- [📁 Repo layout](#-repo-layout)
-- [🚀 Quick start](#-quick-start)
-- [🔌 Enabling the real models (optional)](#-enabling-the-real-models-optional)
-- [📡 API surface](#-api-surface)
-- [🖥️ Single-file demo apps](#️-single-file-demo-apps)
-- [⚠️ Honest limitations](#️-honest-limitations)
-- [📄 License](#-license)
-- [👤 Author](#-author)
-
----
-
 ## ✨ What it does
 
 ```
