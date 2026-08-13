@@ -197,6 +197,11 @@ def _auto_measure(photo, img_bgr):
                            minLineLength=40, maxLineGap=12)
     if segs is None:
         return []
+    segs = np.asarray(segs, dtype=float)
+    if segs.ndim == 3:
+        segs = segs.reshape(-1, 4)
+    if segs.ndim != 2 or segs.shape[1] != 4 or not len(segs):
+        return []
 
     def _dup(k, px, py):
         (ax, ay), (bx, by) = k["start"], k["end"]
@@ -206,7 +211,7 @@ def _auto_measure(photo, img_bgr):
         return min(ang, 180 - ang) <= 8 and dist <= 30
 
     kept = []
-    for (x1, y1, x2, y2) in segs[:, 0]:
+    for (x1, y1, x2, y2) in segs:
         px_len = int(round(math.hypot(x2 - x1, y2 - y1)))
         if px_len < 40:
             continue
