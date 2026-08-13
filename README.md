@@ -210,32 +210,40 @@ Run `streamlit run streamlit_app.py` — free Community Cloud deploy; torch-free
 
 [MIT](LICENSE) © Aritra Barman — built for the **Smart India Hackathon (SIH)** demo track.
 
-## 👤 Author
+## 👤 Authors
 
 <div align="center">
 
-<a href="https://github.com/Aritra709">
-  <img src="https://github.com/Aritra709.png?size=120" width="120" height="120" alt="Aritra Barman avatar" style="border-radius:50%"/>
-</a>
-
-**Aritra Barman**
-
-[![GitHub](https://img.shields.io/badge/GitHub-Aritra709-181717?style=for-the-badge&logo=github&logoColor=white)](https://github.com/Aritra709)
-
-<a href="https://github.com/priyam63p">
-  <img src="https://github.com/priyam63p.png?size=120" width="120" height="120" alt="Priyam avatar" style="border-radius:50%"/>
-</a>
-
-**Priyam**
-
-[![GitHub](https://img.shields.io/badge/GitHub-priyam63p-181717?style=for-the-badge&logo=github&logoColor=white)](https://github.com/priyam63p)
-
-<a href="https://github.com/bhagyashreeghosh25-tech">
-  <img src="https://github.com/bhagyashreeghosh25-tech.png?size=120" width="120" height="120" alt="Bhagyashree Ghosh avatar" style="border-radius:50%"/>
-</a>
-
-**Bhagyashree Ghosh**
-
-[![GitHub](https://img.shields.io/badge/GitHub-bhagyashreeghosh25-tech-181717?style=for-the-badge&logo=github&logoColor=white)](https://github.com/bhagyashreeghosh25-tech)
+<table>
+  <tr>
+    <td align="center">
+      <a href="https://github.com/Aritra709">
+        <img src="https://github.com/Aritra709.png?size=120" width="120" height="120" alt="Aritra Barman avatar" style="border-radius:50%"/>
+      </a>
+      <br>
+      <b>Aritra Barman</b>
+      <br>
+      <a href="https://github.com/Aritra709"><img src="https://img.shields.io/badge/GitHub-Aritra709-181717?style=for-the-badge&logo=github&logoColor=white" alt="GitHub"/></a>
+    </td>
+    <td align="center">
+      <a href="https://github.com/priyam63p">
+        <img src="https://github.com/priyam63p.png?size=120" width="120" height="120" alt="Priyam avatar" style="border-radius:50%"/>
+      </a>
+      <br>
+      <b>Priyam</b>
+      <br>
+      <a href="https://github.com/priyam63p"><img src="https://img.shields.io/badge/GitHub-priyam63p-181717?style=for-the-badge&logo=github&logoColor=white" alt="GitHub"/></a>
+    </td>
+    <td align="center">
+      <a href="https://github.com/bhagyashreeghosh25-tech">
+        <img src="https://github.com/bhagyashreeghosh25-tech.png?size=120" width="120" height="120" alt="Bhagyashree Ghosh avatar" style="border-radius:50%"/>
+      </a>
+      <br>
+      <b>Bhagyashree Ghosh</b>
+      <br>
+      <a href="https://github.com/bhagyashreeghosh25-tech"><img src="https://img.shields.io/badge/GitHub-bhagyashreeghosh25-tech-181717?style=for-the-badge&logo=github&logoColor=white" alt="GitHub"/></a>
+    </td>
+  </tr>
+</table>
 
 </div>
