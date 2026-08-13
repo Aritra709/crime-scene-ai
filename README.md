@@ -226,4 +226,20 @@ GET  /api/health
 
 [![GitHub](https://img.shields.io/badge/GitHub-Aritra709-181717?style=for-the-badge&logo=github&logoColor=white)](https://github.com/Aritra709)
 
+<a href="https://github.com/priyam63p">
+  <img src="https://github.com/priyam63p.png?size=120" width="120" height="120" alt="Priyam avatar" style="border-radius:50%"/>
+</a>
+
+**Priyam**
+
+[![GitHub](https://img.shields.io/badge/GitHub-priyam63p-181717?style=for-the-badge&logo=github&logoColor=white)](https://github.com/priyam63p)
+
+<a href="https://github.com/bhagyashreeghosh25-tech">
+  <img src="https://github.com/bhagyashreeghosh25-tech.png?size=120" width="120" height="120" alt="Bhagyashree Ghosh avatar" style="border-radius:50%"/>
+</a>
+
+**Bhagyashree Ghosh**
+
+[![GitHub](https://img.shields.io/badge/GitHub-bhagyashreeghosh25-tech-181717?style=for-the-badge&logo=github&logoColor=white)](https://github.com/bhagyashreeghosh25-tech)
+
 </div>
