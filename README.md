@@ -119,8 +119,7 @@ crime-scene-ai/
 │   └── src/components/    UploadView, ImageAnnotator (canvas), ReportEditor, CaseList
 ├── scripts/               sample-image generator + end-to-end API test
 ├── docs/                  banner + assets
-├── gradio_app.py          Gradio port (Hugging Face Space)
-└── streamlit_app.py       Streamlit port (Community Cloud, torch-free YOLO via ONNX)
+└── streamlit_app.py       Streamlit UI (torch-free YOLO via ONNX)
 ```
 
 </details>
@@ -194,12 +193,9 @@ GET  /api/health
 
 </details>
 
-## 🖥️ Single-file demo apps
+## 🖥️ Streamlit demo app
 
-| App | Run | Notes |
-|---|---|---|
-| 🚀 **Gradio** | `python gradio_app.py` | Hugging Face Space port, http://localhost:7860 |
-| 📊 **Streamlit** | `streamlit run streamlit_app.py` | Free Community Cloud deploy; torch-free YOLO via bundled ONNX |
+Run `streamlit run streamlit_app.py` — free Community Cloud deploy; torch-free YOLO via bundled ONNX.
 
 ## ⚠️ Honest limitations
 
