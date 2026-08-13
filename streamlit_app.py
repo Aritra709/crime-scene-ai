@@ -328,15 +328,15 @@ html, body { scroll-behavior: smooth; }
 }
 
 @media (max-width: 720px) {
-  [data-testid="stHorizontalBlock"]:has([data-testid="stColumn"]:has([data-testid="stFileUploader"])) {
+  [data-testid="stHorizontalBlock"]:has(div[data-testid="stFileUploader"]) {
     flex-direction: column;
   }
-  [data-testid="stHorizontalBlock"]:has([data-testid="stColumn"]:has([data-testid="stFileUploader"])) > [data-testid="stColumn"] {
+  [data-testid="stHorizontalBlock"]:has(div[data-testid="stFileUploader"]) > [data-testid="stColumn"] {
     width: 100% !important;
     max-width: 100% !important;
     flex-basis: auto !important;
   }
-  [data-testid="stColumn"]:has([data-testid="stFileUploader"]) {
+  [data-testid="stColumn"]:has(div[data-testid="stFileUploader"]) {
     transform: none !important;
   }
   [data-testid="stHorizontalBlock"]:has([data-testid="stMetric"]) {
@@ -802,7 +802,7 @@ with col1:
         lng_in = st.number_input("Longitude (opt.)", value=None, format="%.6f")
         analyze_btn = st.button("Analyze all photos", type="primary")
 
-    placed = "100%" if not bool(uploaded) else "0px"
+    placed = "calc(100% + 0.5rem)" if not bool(uploaded) else "0px"
     slide = "0.55s ease-in-out" if bool(uploaded) else "none"
     st.markdown(f"""
     <style>
