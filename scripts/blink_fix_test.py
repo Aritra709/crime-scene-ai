@@ -1,4 +1,3 @@
-import math
 import os, cv2, numpy as np
 from streamlit.testing.v1 import AppTest
 
@@ -46,19 +45,6 @@ assert second != first, "marker change must invalidate canvas cache"
 at.session_state["markers"] = []
 at.run()
 
-# scale mode renders; inject scale -> number input appears; set it -> px_per_cm
-at.radio[1].set_value("Set scale reference").run()
-assert not at.exception
-at.session_state["scale"] = {"photo": photo, "start": (0, 0), "end": (100, 0),
-                             "px_len": 100, "known_cm": None, "px_per_cm": None}
-at.run()
-assert not at.exception
-nums = [n for n in at.number_input if "Known length" in (n.label or "")]
-assert nums, "known-cm input should render"
-nums[0].set_value(50.0)
-at.run()
-assert abs(at.session_state["scale"]["px_per_cm"] - 2.0) < 1e-9, at.session_state["scale"]
-
 # markers mode + markers -> component renders with fixed dims
 at.radio[1].set_value("Add evidence markers").run()
 at.session_state["markers"] = [{"id": 1, "photo": photo, "x": 10, "y": 10, "note": "t", "ts": "x"}]
@@ -80,17 +66,6 @@ assert sug.get("narrative") and sug.get("anomaly_flags") and sug.get("next_steps
 print("ai suggestions:", sug["source"], "| flags:", len(sug["anomaly_flags"]),
       "| steps:", len(sug["next_steps"]))
 
-# scale label sync: change known-cm -> the canvas fingerprint must reflect it
-# on the SAME run (previously the canvas showed the previous run's length)
-at.radio[1].set_value("Set scale reference").run()
-at.session_state["scale"].update({"known_cm": 50.0, "px_per_cm": 0.0})
-at.session_state[f"known_cm_{photo}"] = 50.0
-at.run()
-assert not at.exception
-finger = at.session_state["_canvas_cache"]["finger"]
-assert "2.0" in finger, "canvas fingerprint must use the current known length"
-assert abs(at.session_state["scale"]["px_per_cm"] - 2.0) < 1e-9
-
 # confirm flow
 for i, b in enumerate(at.get("button")):
     if b.label.startswith("Confirm"):
@@ -99,11 +74,9 @@ for i, b in enumerate(at.get("button")):
         break
 assert not at.exception
 detail = at.session_state["last_case"]
-assert detail and detail.get("evidence_markers") and detail.get("scale"), detail
-assert detail["scale"]["px_per_cm"] > 0
+assert detail and detail.get("evidence_markers"), detail
 ai = detail.get("ai_report") or {}
 assert ai.get("source") == "mock" and ai.get("anomaly_flags"), ai
 assert detail.get("anomaly_flags"), "DB anomaly_flags must be populated from AI report"
-print("thumbs:", cache["rgb"].shape, "| case markers:", len(detail["evidence_markers"]),
-      "| px_per_cm:", detail["scale"]["px_per_cm"])
+print("thumbs:", cache["rgb"].shape, "| case markers:", len(detail["evidence_markers"]))
 print("ALL OK")

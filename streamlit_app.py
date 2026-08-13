@@ -2,14 +2,12 @@
 
 Human-in-the-loop demo: upload one or more photos -> explainable triage draft
 (objects, stain candidates, AI observation & suggestions, offline-safe) ->
-click-to-drop numbered evidence markers + a two-click reference scale for
-approximate size estimates (cm) -> officer writes/confirms the narrative ->
-confirmed report logged to the case file with audit trail and pattern
-matches -> JSON/PDF report export.
+click-to-drop numbered evidence markers -> officer writes/confirms the
+narrative -> confirmed report logged to the case file with audit trail and
+pattern matches -> JSON/PDF report export.
 """
 
 import json
-import math
 import os
 import sys
 import uuid
@@ -43,8 +41,6 @@ _DEFAULTS = {
     "last_case": None,
     "markers": [],
     "marker_seq": 0,
-    "scale": None,
-    "scale_start": None,
     "measurements": [],
     "measure_seq": 0,
     "photo_view": None,
@@ -149,26 +145,10 @@ def draw_pins(img, markers, photo):
         _pin_chip(img, x, y, str(m["id"]), (255, 255, 0))
 
 
-def draw_scale(img, scale, photo):
-    if not scale or scale.get("photo") != photo:
-        return
-    (x1, y1), (x2, y2) = scale["start"], scale["end"]
-    cv2.line(img, (x1, y1), (x2, y2), (255, 0, 255), 3)
-    cv2.circle(img, (x1, y1), 6, (255, 0, 255), -1)
-    cv2.circle(img, (x2, y2), 6, (255, 0, 255), -1)
-    cm = scale.get("known_cm")
-    if cm:
-        label = f"{cm:g} cm  /  {scale['px_len']} px"
-    else:
-        label = f"line: {scale['px_len']} px"
-    _pin_chip(img, (x1 + x2) // 2, (y1 + y2) // 2, label, (255, 0, 255))
-
-
 def canvas_bgr(photo):
     img = st.session_state.images[photo]["bgr"].copy()
     img = annotate(img, st.session_state.analyses[photo])
     draw_pins(img, st.session_state.markers, photo)
-    draw_scale(img, st.session_state.scale, photo)
     return img
 
 
@@ -227,8 +207,6 @@ def analyze_all(files, officer_id, lat, lng):
     st.session_state.photo_view = next(iter(images))
     st.session_state.markers = []
     st.session_state.marker_seq = 0
-    st.session_state.scale = None
-    st.session_state.scale_start = None
     st.session_state.measurements = []
     st.session_state.measure_seq = 0
     st.session_state.merged = merge_analyses(analyses)
@@ -265,7 +243,6 @@ def confirm(officer_id, narrative, lat, lng):
         "processing_notes": merged.get("processing_notes", []),
         "evidence_markers": st.session_state.markers,
         "measurements": st.session_state.measurements,
-        "scale": st.session_state.scale,
         "photos": [{"name": n, "image_id": im["image_id"]} for n, im in images.items()],
     }
     log_entries = [
@@ -276,8 +253,7 @@ def confirm(officer_id, narrative, lat, lng):
         {"actor": "officer", "action": "confirmed-edited",
          "detail": {"narrative_written": bool(payload["narrative"]),
                     "objects_confirmed": len(payload["objects"]),
-                    "evidence_markers": len(payload["evidence_markers"]),
-                    "scale_set": bool(payload.get("scale") and payload["scale"].get("known_cm"))}},
+                    "evidence_markers": len(payload["evidence_markers"])}},
     ]
     case_id = db.insert_case(payload, log_entries)
     detail = db.get_case(case_id)
@@ -296,10 +272,6 @@ def case_card(c):
     if measurements:
         md += "- Measured distances: " + ", ".join(
             f"{m['cm']} cm" if m.get("cm") else f"{m['px_len']} px" for m in measurements) + "\n"
-    scale = c.get("scale")
-    if scale and scale.get("known_cm"):
-        md += (f"- Scale reference on `{scale['photo']}`: {scale['px_len']} px = "
-               f"{scale['known_cm']} cm — size estimates approximate\n")
     md += f"- Narrative: {c['narrative']}\n"
     ai = c.get("ai_report") or {}
     ai_flags = ai.get("anomaly_flags") or []
@@ -316,21 +288,6 @@ def case_card(c):
     for e in c.get("log", []):
         md += f"- {e['ts']} · {e['actor']} · {e['action']}\n"
     return md
-
-
-def _sized(items, scale):
-    pxcm = (scale or {}).get("px_per_cm")
-    if not pxcm:
-        return items
-    out = []
-    for it in items:
-        r = dict(it)
-        b = r.get("bbox")
-        if b:
-            r["w_cm"] = round((b["x2"] - b["x1"]) / pxcm, 1)
-            r["h_cm"] = round((b["y2"] - b["y1"]) / pxcm, 1)
-        out.append(r)
-    return out
 
 
 def _report_dict(detail):
@@ -354,7 +311,6 @@ def _report_dict(detail):
         "stains": clean(detail.get("stains", [])),
         "evidence_markers": clean(detail.get("evidence_markers", [])),
         "measurements": clean(detail.get("measurements", [])),
-        "scale": detail.get("scale"),
         "tamper": detail.get("tamper", {}),
         "processing_notes": detail.get("processing_notes", []),
         "pattern_matches": detail.get("matches", []),
@@ -413,41 +369,29 @@ def _pdf_report(detail):
         for m in matches:
             line(f"- case {m['case_id']} score {m['score']} — shared: {', '.join(m['shared_categories'])}")
 
-    scale = detail.get("scale")
-    if scale and scale.get("known_cm"):
-        sec("Scale reference")
-        line(f"Photo: {scale['photo']}  |  {scale['px_len']} px = {scale['known_cm']} cm  |  "
-             f"{scale['px_per_cm']:.2f} px/cm (approximate, plane-dependent)")
-
     sec("Objects detected")
     pdf.cell(22, 5, "Photo", border=1)
     pdf.cell(36, 5, "Class", border=1)
     pdf.cell(30, 5, "Category", border=1)
     pdf.cell(16, 5, "Conf", border=1)
-    pdf.cell(18, 5, "w (cm)", border=1)
-    pdf.cell(18, 5, "h (cm)", border=1, new_x="LMARGIN", new_y="NEXT")
+    pdf.cell(22, 5, "Source", border=1, new_x="LMARGIN", new_y="NEXT")
     for o in detail.get("objects", []):
         pdf.cell(22, 5, _pdf_text(o.get("photo", "")), border=1)
         pdf.cell(36, 5, _pdf_text(o.get("class", "?")), border=1)
         pdf.cell(30, 5, _pdf_text(o.get("category", "")), border=1)
         pdf.cell(16, 5, _pdf_text(_pct(o.get("confidence", ""))), border=1)
-        pdf.cell(18, 5, _pdf_text(o.get("w_cm", "")), border=1)
-        pdf.cell(18, 5, _pdf_text(o.get("h_cm", "")), border=1, new_x="LMARGIN", new_y="NEXT")
+        pdf.cell(22, 5, _pdf_text(o.get("source", "")), border=1, new_x="LMARGIN", new_y="NEXT")
 
     sec("Blood-like stain candidates")
     pdf.cell(22, 5, "Photo", border=1)
     pdf.cell(60, 5, "Class", border=1)
     pdf.cell(16, 5, "Conf", border=1)
-    pdf.cell(18, 5, "Area%", border=1)
-    pdf.cell(18, 5, "w (cm)", border=1)
-    pdf.cell(18, 5, "h (cm)", border=1, new_x="LMARGIN", new_y="NEXT")
+    pdf.cell(18, 5, "Area%", border=1, new_x="LMARGIN", new_y="NEXT")
     for s in detail.get("stains", []):
         pdf.cell(22, 5, _pdf_text(s.get("photo", "")), border=1)
         pdf.cell(60, 5, _pdf_text(s.get("class", "?")), border=1)
         pdf.cell(16, 5, _pdf_text(_pct(s.get("confidence", ""))), border=1)
-        pdf.cell(18, 5, _pdf_text(s.get("area_pct", "")), border=1)
-        pdf.cell(18, 5, _pdf_text(s.get("w_cm", "")), border=1)
-        pdf.cell(18, 5, _pdf_text(s.get("h_cm", "")), border=1, new_x="LMARGIN", new_y="NEXT")
+        pdf.cell(18, 5, _pdf_text(s.get("area_pct", "")), border=1, new_x="LMARGIN", new_y="NEXT")
 
     if detail.get("evidence_markers"):
         sec("Evidence markers")
@@ -472,8 +416,6 @@ def _reset_derived():
     for k in ("analyses", "images", "merged", "markers", "last_case", "photo_view"):
         st.session_state[k] = _DEFAULTS[k]
     st.session_state.marker_seq = 0
-    st.session_state.scale = None
-    st.session_state.scale_start = None
     st.session_state.measurements = []
     st.session_state.measure_seq = 0
     st.session_state.narrative = ""
@@ -510,21 +452,6 @@ def _on_canvas_click():
             "x": x, "y": y, "note": "",
             "ts": datetime.now(timezone.utc).isoformat(),
         })
-    elif mode == "Set scale reference":
-        ss = st.session_state.get("scale_start")
-        if ss is None or ss.get("photo") != photo:
-            st.session_state.scale_start = {"photo": photo, "x": x, "y": y}
-        else:
-            px_len = int(round(math.hypot(x - ss["x"], y - ss["y"])))
-            if px_len < 10:
-                st.warning("Pick the two ends at least ~10 px apart, then re-click the first end.")
-                st.session_state.scale_start = None
-            else:
-                st.session_state.scale = {
-                    "photo": photo, "start": (ss["x"], ss["y"]), "end": (x, y),
-                    "px_len": px_len, "known_cm": None, "px_per_cm": None,
-                }
-                st.session_state.scale_start = None
 
 
 st.markdown(
@@ -551,7 +478,7 @@ if analyze_btn:
     if not files:
         st.error("Upload at least one photo first.")
     elif analyze_all(files, officer_id, lat_in, lng_in):
-        st.success(f"Analyzed {len(files)} photo(s) — review the overlay, add markers/scale, then confirm the case.")
+        st.success(f"Analyzed {len(files)} photo(s) — review the overlay, add markers, then confirm the case.")
 
 with col2:
     merged = st.session_state.merged
@@ -565,15 +492,10 @@ with col2:
             photo = st.radio("View photo", names, index=names.index(photo), horizontal=True, key="photo_sel")
         st.session_state.photo_view = photo
         mode = st.radio(
-            "Canvas mode", ["View overlay", "Add evidence markers", "Set scale reference"],
+            "Canvas mode", ["View overlay", "Add evidence markers"],
             horizontal=True, key="canvas_mode",
         )
         canvas = canvas_bgr(photo)
-        _s = st.session_state.scale
-        if _s and _s.get("photo") == photo:
-            _k = st.session_state.get(f"known_cm_{photo}", 10.0) or 10.0
-            _s["known_cm"] = float(_k)
-            _s["px_per_cm"] = _s["px_len"] / float(_k)
         oh, ow = canvas.shape[:2]
         tw = min(CANVAS_W, ow)
         th = max(1, int(round(oh * tw / ow)))
@@ -581,7 +503,6 @@ with col2:
             photo, mode,
             ";".join(f"{m['id']}:{m.get('photo', '')}:{m['x']}:{m['y']}" for m in st.session_state.markers),
             ";".join(f"{m['id']}:{m.get('photo', '')}:{m['px_len']}" for m in st.session_state.measurements),
-            repr(st.session_state.scale),
         ))
         cache = st.session_state["_canvas_cache"]
         if cache.get("finger") != finger:
@@ -594,33 +515,11 @@ with col2:
             st.caption("AI triage overlay — boxes are suggestions, not evidence")
             st.image(cache["bytes"])
         else:
-            if mode == "Add evidence markers":
-                st.caption("Click anywhere on the photo to drop a numbered evidence marker.")
-            elif mode == "Set scale reference":
-                if st.session_state.scale_start is None:
-                    st.caption(f"Step 1/3: click the first end of a known-length line on '{photo}'.")
-                else:
-                    st.caption("Step 2/3: click the second end of the line (must be a different point).")
+            st.caption("Click anywhere on the photo to drop a numbered evidence marker.")
             streamlit_image_coordinates(
                 cache["rgb"], width=tw, height=th, key=f"cv_{photo}",
                 on_click=_on_canvas_click, image_format="JPEG", jpeg_quality=85,
             )
-        scale = st.session_state.scale
-        if scale and scale.get("photo") == photo:
-            st.markdown(f"**Scale reference** on `{photo}`: the selected line is "
-                        f"{scale['px_len']} px long (magenta, drawn on the photo).")
-            known_cm = st.number_input(
-                "Known length of the reference line (cm)", min_value=0.1,
-                value=10.0, step=1.0, key=f"known_cm_{photo}",
-            )
-            scale["known_cm"] = float(known_cm)
-            scale["px_per_cm"] = scale["px_len"] / float(known_cm)
-            st.caption(f"Selected line = **{known_cm:g} cm** -> {scale['px_per_cm']:.2f} px/cm. "
-                       "Sizes assume objects lie near the calibration plane (approximate).")
-            if st.button("Clear scale reference", key=f"clr_scale_{photo}"):
-                st.session_state.scale = None
-                st.session_state.scale_start = None
-                st.rerun()
         markers = st.session_state.markers
         if markers:
             st.markdown("### Evidence markers")
@@ -641,22 +540,17 @@ with col2:
         st.caption("Preview — click 'Analyze all photos' to run the triage pipeline.")
 
 if merged:
-    scale = st.session_state.scale
-    pxcm = (scale or {}).get("px_per_cm")
-    size_headers = ["w_cm", "h_cm"] if pxcm else []
     st.caption(f"photos: {len(st.session_state.images)} · "
                f"evidence markers: {len(st.session_state.markers)}")
 
     st.subheader("Objects detected")
-    st.dataframe(_df(_sized(merged.get("objects", []), scale),
-                     ["class", "category", "confidence", "source", "photo"] + size_headers),
+    st.dataframe(_df(merged.get("objects", []),
+                     ["class", "category", "confidence", "source", "photo"]),
                  width="stretch", hide_index=True)
     st.subheader("Blood-like stain candidates")
-    st.dataframe(_df(_sized(merged.get("stains", []), scale),
-                     ["class", "confidence", "area_pct", "photo"] + size_headers),
+    st.dataframe(_df(merged.get("stains", []),
+                     ["class", "confidence", "area_pct", "photo"]),
                  width="stretch", hide_index=True)
-    if pxcm:
-        st.caption("w_cm / h_cm estimated from the reference scale — approximate, plane-dependent.")
 
     tamper = merged.get("tamper", {})
     st.markdown(f"**Tamper check:** `{tamper.get('flag', 'inconclusive')}` "
@@ -688,8 +582,7 @@ if merged:
                     st.rerun()
 
     st.markdown("## Officer confirmation (human-in-the-loop)")
-    st.caption(f"Marks {len(st.session_state.markers)} evidence markers · "
-               f"scale {'set' if scale and scale.get('known_cm') else 'not set'}")
+    st.caption(f"Marks {len(st.session_state.markers)} evidence markers")
     narrative = st.text_area(
         "Officer narrative (write your own account; nothing is logged until you confirm)",
         value=st.session_state.narrative, height=140,
