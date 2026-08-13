@@ -99,7 +99,7 @@ Pattern matching — category-overlap scoring vs past confirmed cases
 | 🧠 Reasoning | OpenAI-compatible LLM API · offline mock fallback |
 | 🎨 Frontend | React 18 · TypeScript · Vite (mobile-first) |
 | 🗄️ Storage | SQLite case log with audit trail |
-| 🐳 Deploy | Docker · Hugging Face Spaces · Streamlit Community Cloud · Gradio |
+| 🐳 Deploy | Streamlit Community Cloud |
 
 ## 📁 Repo layout
 
