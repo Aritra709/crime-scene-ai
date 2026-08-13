@@ -45,7 +45,9 @@ _DEFAULTS = {
     "scale": None,
     "scale_start": None,
     "photo_view": None,
+    "_canvas_cache": {},
 }
+CANVAS_W = 1100
 for _k, _v in _DEFAULTS.items():
     if _k not in st.session_state:
         st.session_state[_k] = _v
@@ -435,7 +437,12 @@ def _reset_derived():
 
 
 def _on_canvas_click():
-    """Fires once per canvas click (component's on_click) — no remount, no blink."""
+    """Fires once per canvas click (component's on_click) — no remount, no blink.
+
+    The component reports x/y/width/height in *displayed* pixels (offsetX + CSS
+    rendered img size), so coordinates are mapped to original-image pixels with
+    the returned width/height as the scale.
+    """
     photo = st.session_state.get("photo_view")
     if not photo:
         return
@@ -445,10 +452,13 @@ def _on_canvas_click():
     img = st.session_state.images[photo]["bgr"]
     h, w = img.shape[:2]
     cw, ch = click.get("width"), click.get("height")
-    if (cw and ch) and (abs(cw - w) > w * 0.05 or abs(ch - h) > h * 0.05):
-        st.warning("Canvas coordinate mismatch — marker placement may be off.")
-    x = min(max(int(round(click.get("x", 0))), 0), w - 1)
-    y = min(max(int(round(click.get("y", 0))), 0), h - 1)
+    if cw and ch and cw > 0 and ch > 0:
+        x = int(round(click.get("x", 0) * w / cw))
+        y = int(round(click.get("y", 0) * h / ch))
+    else:
+        x, y = int(round(click.get("x", 0))), int(round(click.get("y", 0)))
+    x = min(max(x, 0), w - 1)
+    y = min(max(y, 0), h - 1)
     mode = st.session_state.get("canvas_mode", "View overlay")
     if mode == "Add evidence markers":
         st.session_state.marker_seq += 1
@@ -516,11 +526,25 @@ with col2:
             horizontal=True, key="canvas_mode",
         )
         canvas = canvas_bgr(photo)
+        oh, ow = canvas.shape[:2]
+        tw = min(CANVAS_W, ow)
+        th = max(1, int(round(oh * tw / ow)))
+        finger = "|".join((
+            photo, mode,
+            ";".join(f"{m['id']}:{m.get('photo', '')}:{m['x']}:{m['y']}" for m in st.session_state.markers),
+            repr(st.session_state.scale),
+        ))
+        cache = st.session_state["_canvas_cache"]
+        if cache.get("finger") != finger:
+            thumb = canvas if tw == ow else cv2.resize(canvas, (tw, th), interpolation=cv2.INTER_AREA)
+            ok, buf = cv2.imencode(".jpg", thumb, [cv2.IMWRITE_JPEG_QUALITY, 85])
+            cache = {"finger": finger, "bytes": buf.tobytes() if ok else b"",
+                     "rgb": cv2.cvtColor(thumb, cv2.COLOR_BGR2RGB)}
+            st.session_state["_canvas_cache"] = cache
         if mode == "View overlay":
             st.caption("AI triage overlay — boxes are suggestions, not evidence")
-            st.image(cv2.cvtColor(canvas, cv2.COLOR_BGR2RGB))
+            st.image(cache["bytes"])
         else:
-            rgb = cv2.cvtColor(canvas, cv2.COLOR_BGR2RGB)
             if mode == "Add evidence markers":
                 st.caption("Click anywhere on the photo to drop a numbered evidence marker.")
             elif st.session_state.scale_start is None:
@@ -528,8 +552,8 @@ with col2:
             else:
                 st.caption("Step 2/3: click the second end of the line (must be a different point).")
             streamlit_image_coordinates(
-                rgb, key=f"cv_{photo}", on_click=_on_canvas_click,
-                image_format="JPEG", jpeg_quality=85, use_column_width=True,
+                cache["rgb"], width=tw, height=th, key=f"cv_{photo}",
+                on_click=_on_canvas_click, image_format="JPEG", jpeg_quality=85,
             )
         scale = st.session_state.scale
         if scale and scale.get("photo") == photo:
