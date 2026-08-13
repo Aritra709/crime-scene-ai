@@ -189,7 +189,158 @@ html, body, [class*="css"], [data-testid="stApp"] {
 
 ::-webkit-scrollbar { width: 10px; height: 10px; }
 ::-webkit-scrollbar-thumb { background: rgba(148, 163, 184, 0.25); border-radius: 8px; }
+
+/* ---------- animated background ---------- */
+[data-testid="stAppViewContainer"] { isolation: isolate; }
+.bg-fx { position: fixed; inset: 0; z-index: -1; pointer-events: none; overflow: hidden; }
+.bg-fx .orb { position: absolute; border-radius: 50%; filter: blur(80px); will-change: transform, opacity; }
+.bg-fx .orb-a {
+  width: 48vw; height: 48vw; left: -14vw; top: -16vw; opacity: 0.35;
+  background: radial-gradient(circle, rgba(99, 102, 241, 0.55), rgba(99, 102, 241, 0) 70%);
+  animation: driftA 26s ease-in-out infinite alternate;
+}
+.bg-fx .orb-b {
+  width: 40vw; height: 40vw; right: -12vw; top: 6vh; opacity: 0.30;
+  background: radial-gradient(circle, rgba(34, 211, 238, 0.5), rgba(34, 211, 238, 0) 70%);
+  animation: driftB 32s ease-in-out infinite alternate;
+}
+.bg-fx .orb-c {
+  width: 46vw; height: 46vw; left: 22vw; bottom: -18vw; opacity: 0.28;
+  background: radial-gradient(circle, rgba(168, 85, 247, 0.45), rgba(168, 85, 247, 0) 70%);
+  animation: driftC 38s ease-in-out infinite alternate;
+}
+.bg-fx .orb-d {
+  width: 30vw; height: 30vw; right: 12vw; bottom: 4vh; opacity: 0.26;
+  background: radial-gradient(circle, rgba(244, 63, 94, 0.4), rgba(244, 63, 94, 0) 70%);
+  animation: driftD 28s ease-in-out infinite alternate;
+}
+.bg-fx .orb-e {
+  width: 70vw; height: 70vw; left: 15vw; top: -30vw; opacity: 0.14;
+  background: conic-gradient(from 0deg, transparent, rgba(129, 140, 248, 0.5), transparent 32%, rgba(103, 232, 249, 0.4) 55%, transparent);
+  animation: spinSlow 70s linear infinite;
+}
+.bg-fx .grid {
+  position: absolute; inset: 0;
+  background-image:
+    linear-gradient(rgba(148, 163, 184, 0.07) 1px, transparent 1px),
+    linear-gradient(90deg, rgba(148, 163, 184, 0.07) 1px, transparent 1px);
+  background-size: 52px 52px;
+  -webkit-mask-image: radial-gradient(ellipse 90% 70% at 50% 0%, black 25%, transparent 78%);
+  mask-image: radial-gradient(ellipse 90% 70% at 50% 0%, black 25%, transparent 78%);
+  animation: gridScroll 75s linear infinite;
+}
+.bg-fx .slide { position: absolute; inset: 0; opacity: 0; animation: slideShow 45s ease-in-out infinite; }
+.bg-fx .slide.s1 {
+  background:
+    radial-gradient(52% 40% at 18% 22%, rgba(129, 140, 248, 0.26), transparent 62%),
+    radial-gradient(40% 34% at 86% 68%, rgba(34, 211, 238, 0.18), transparent 60%);
+  animation-delay: 0s;
+}
+.bg-fx .slide.s2 {
+  background:
+    radial-gradient(50% 42% at 82% 18%, rgba(168, 85, 247, 0.24), transparent 62%),
+    radial-gradient(44% 38% at 12% 74%, rgba(244, 63, 94, 0.15), transparent 60%);
+  animation-delay: 15s;
+}
+.bg-fx .slide.s3 {
+  background:
+    radial-gradient(54% 44% at 50% 30%, rgba(34, 211, 238, 0.22), transparent 64%),
+    radial-gradient(36% 30% at 8% 60%, rgba(99, 102, 241, 0.22), transparent 60%);
+  animation-delay: 30s;
+}
+
+@keyframes driftA {
+  from { transform: translate3d(0, 0, 0) scale(1); opacity: 0.25; }
+  to   { transform: translate3d(9vw, 7vh, 0) scale(1.18); opacity: 0.5; }
+}
+@keyframes driftB {
+  from { transform: translate3d(0, 0, 0) scale(1.1); opacity: 0.2; }
+  to   { transform: translate3d(-8vw, 10vh, 0) scale(0.95); opacity: 0.45; }
+}
+@keyframes driftC {
+  from { transform: translate3d(0, 0, 0) scale(1); opacity: 0.18; }
+  to   { transform: translate3d(-10vw, -8vh, 0) scale(1.22); opacity: 0.42; }
+}
+@keyframes driftD {
+  from { transform: translate3d(0, 0, 0) scale(1.05); opacity: 0.16; }
+  to   { transform: translate3d(6vw, -9vh, 0) scale(0.9); opacity: 0.38; }
+}
+@keyframes spinSlow { to { transform: rotate(360deg); } }
+@keyframes gridScroll { to { background-position: 52px 52px; } }
+@keyframes slideShow {
+  0% { opacity: 0; }
+  6% { opacity: 1; }
+  30% { opacity: 1; }
+  36% { opacity: 0; }
+  100% { opacity: 0; }
+}
+
+/* ---------- motion: title, cards, buttons ---------- */
+.hero h1 {
+  background-size: 220% auto;
+  animation: textFlow 9s ease-in-out infinite;
+}
+@keyframes textFlow {
+  0% { background-position: 0% 50%; }
+  50% { background-position: 100% 50%; }
+  100% { background-position: 0% 50%; }
+}
+
+.hero, [data-testid="stMetric"] { animation: riseIn 0.5s cubic-bezier(0.2, 0.7, 0.3, 1) both; }
+
+[data-testid="stVerticalBlockBorderWrapper"] {
+  animation: riseIn 0.5s cubic-bezier(0.2, 0.7, 0.3, 1) both;
+  transition: transform 0.25s ease, border-color 0.25s ease, box-shadow 0.25s ease;
+}
+[data-testid="stVerticalBlockBorderWrapper"]:hover {
+  transform: translateY(-3px);
+  border-color: rgba(129, 140, 248, 0.35);
+  box-shadow: 0 18px 40px -18px rgba(99, 102, 241, 0.35);
+}
+@keyframes riseIn {
+  from { opacity: 0; transform: translateY(14px); }
+  to   { opacity: 1; transform: translateY(0); }
+}
+
+[data-testid="stBaseButton-secondary"], .stButton > button, .stDownloadButton button {
+  position: relative; overflow: hidden;
+}
+[data-testid="stBaseButton-secondary"]::after, .stButton > button::after, .stDownloadButton button::after {
+  content: ""; position: absolute; top: 0; left: -130%; height: 100%; width: 55%;
+  background: linear-gradient(100deg, transparent, rgba(255, 255, 255, 0.28), transparent);
+  transform: skewX(-18deg); animation: shimmer 3.4s ease-in-out infinite;
+}
+@keyframes shimmer {
+  0% { left: -130%; }
+  55% { left: 130%; }
+  100% { left: 130%; }
+}
+
+html, body { scroll-behavior: smooth; }
+
+@media (prefers-reduced-motion: reduce) {
+  .bg-fx .orb, .bg-fx .grid, .bg-fx .slide, .hero h1,
+  [data-testid="stVerticalBlockBorderWrapper"], [data-testid="stMetric"],
+  [data-testid="stBaseButton-secondary"]::after, .stButton button::after, .stDownloadButton button::after {
+    animation: none !important;
+  }
+  [data-testid="stVerticalBlockBorderWrapper"] { transform: none !important; }
+}
 </style>
+"""
+
+_BG_FX = """
+<div class="bg-fx">
+  <div class="orb orb-a"></div>
+  <div class="orb orb-b"></div>
+  <div class="orb orb-c"></div>
+  <div class="orb orb-d"></div>
+  <div class="orb orb-e"></div>
+  <div class="grid"></div>
+  <div class="slide s1"></div>
+  <div class="slide s2"></div>
+  <div class="slide s3"></div>
+</div>
 """
 
 _HERO = """
@@ -203,6 +354,7 @@ _HERO = """
 """
 
 st.markdown(_CSS, unsafe_allow_html=True)
+st.markdown(_BG_FX, unsafe_allow_html=True)
 st.markdown(_HERO, unsafe_allow_html=True)
 
 
