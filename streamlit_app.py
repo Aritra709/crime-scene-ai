@@ -13,6 +13,7 @@ import os
 import sys
 import uuid
 from datetime import datetime, timezone
+from urllib.parse import quote
 
 sys.path.insert(0, os.path.join(os.path.dirname(os.path.abspath(__file__)), "backend"))
 
@@ -32,7 +33,14 @@ from app.pipeline import run_pipeline
 
 db.init_db()
 
-st.set_page_config(page_title="Crime Scene AI — Evidence Capture Assistant", layout="wide")
+_PAGE_ICON = ("data:image/svg+xml;charset=utf-8," + quote(
+    "<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'>"
+    "<defs><linearGradient id='g' x1='0' y1='0' x2='1' y2='1'>"
+    "<stop offset='0' stop-color='#6366f1'/><stop offset='1' stop-color='#06b6d4'/></linearGradient></defs>"
+    "<rect x='8' y='8' width='84' height='84' rx='22' fill='url(#g)'/>"
+    "<circle cx='50' cy='50' r='23' fill='none' stroke='white' stroke-width='7'/></svg>"))
+
+st.set_page_config(page_title="Crime Scene AI — Evidence Capture Assistant", page_icon=_PAGE_ICON, layout="wide")
 
 _DEFAULTS = {
     "analyses": {},
@@ -368,6 +376,72 @@ html, body, [class*="css"], [data-testid="stApp"] {
 
 html, body { scroll-behavior: smooth; }
 
+/* ---------- sidebar ---------- */
+[data-testid="stSidebar"] {
+  background: rgba(7, 11, 22, 0.85);
+  border-right: 1px solid rgba(148, 163, 184, 0.12);
+  backdrop-filter: blur(12px);
+}
+[data-testid="stSidebar"] .side-head {
+  font-size: 0.72rem; font-weight: 800; letter-spacing: 0.22em;
+  color: #7dd3fc; margin-bottom: 0.6rem;
+}
+[data-testid="stSidebar"] hr.side-hr {
+  border: 0; height: 1px; margin: 0.8rem 0;
+  background: linear-gradient(90deg, rgba(129, 140, 248, 0.45), transparent);
+}
+[data-testid="stSidebar"] .stButton, [data-testid="stSidebar"] .stDownloadButton { width: 100%; }
+[data-testid="stSidebar"] .stButton button, [data-testid="stSidebar"] .stDownloadButton button { width: 100%; }
+[data-testid="stSidebar"] [data-testid="stFileUploaderDropzone"] {
+  background: rgba(15, 23, 42, 0.7);
+}
+[data-testid="stSidebar"] [data-testid="stExpander"] { border: none; background: transparent; }
+
+/* ---------- tabs ---------- */
+[data-testid="stTabs"] [data-baseweb="tab-list"] {
+  gap: 0.35rem; border-bottom: 1px solid rgba(148, 163, 184, 0.15);
+}
+[data-testid="stTabs"] button[data-baseweb="tab"] {
+  border-radius: 12px 12px 0 0; padding: 0.5rem 1.2rem;
+  color: #8fa0bd; font-weight: 600; background: transparent;
+  transition: color 0.15s ease, background 0.15s ease;
+}
+[data-testid="stTabs"] button[data-baseweb="tab"]:hover { color: #e2e8f0; background: rgba(148, 163, 184, 0.07); }
+[data-testid="stTabs"] button[data-baseweb="tab"][aria-selected="true"] {
+  color: #fff; background: linear-gradient(180deg, rgba(99, 102, 241, 0.20), rgba(6, 182, 212, 0.08));
+  box-shadow: inset 0 2px 0 #818cf8;
+}
+[data-testid="stTabs"] [data-baseweb="tab-panel"] { padding-top: 1rem; }
+
+/* ---------- pills & chips ---------- */
+.pill {
+  display: inline-block; padding: 0.18rem 0.75rem; border-radius: 999px;
+  font-size: 0.8rem; font-weight: 700; letter-spacing: 0.04em;
+  border: 1px solid transparent; text-transform: capitalize;
+}
+.pill-ok   { color: #6ee7b7; background: rgba(16, 185, 129, 0.12); border-color: rgba(16, 185, 129, 0.4); }
+.pill-warn { color: #fcd34d; background: rgba(245, 158, 11, 0.12); border-color: rgba(245, 158, 11, 0.4); }
+.pill-bad  { color: #fca5a5; background: rgba(239, 68, 68, 0.12);  border-color: rgba(239, 68, 68, 0.4); }
+.muted { color: #7c8db0; font-size: 0.85rem; }
+.chiprow { margin: 0.5rem 0 0.8rem; }
+.chip-label {
+  display: block; margin-bottom: 0.4rem; color: #93c5fd;
+  font-size: 0.76rem; font-weight: 700; letter-spacing: 0.1em; text-transform: uppercase;
+}
+.chip {
+  display: inline-block; margin: 0.15rem 0.35rem 0.15rem 0; padding: 0.24rem 0.75rem;
+  border-radius: 999px; font-size: 0.83rem; color: #e2e8f0;
+  background: rgba(148, 163, 184, 0.08); border: 1px solid rgba(148, 163, 184, 0.25);
+}
+.chip-warn { background: rgba(239, 68, 68, 0.10); border-color: rgba(239, 68, 68, 0.3); color: #fecaca; }
+.chip-info { background: rgba(34, 211, 238, 0.08); border-color: rgba(34, 211, 238, 0.3); color: #a5f3fc; }
+
+/* ---------- canvas image ---------- */
+[data-testid="stImage"] img, .stImage img {
+  border-radius: 14px; border: 1px solid rgba(148, 163, 184, 0.15);
+  box-shadow: 0 24px 60px -30px rgba(0, 0, 0, 0.8);
+}
+
 @media (prefers-reduced-motion: reduce) {
   .bg-fx .orb, .bg-fx .grid, .bg-fx .slide, .hero h1,
   [data-testid="stVerticalBlockBorderWrapper"], [data-testid="stMetric"],
@@ -439,6 +513,10 @@ def _pct(v):
     if isinstance(v, (int, float)):
         return f"{v * 100:.0f}%"
     return v
+
+
+def _esc(s):
+    return str(s).replace("&", "&amp;").replace("<", "&lt;").replace(">", "&gt;")
 
 
 def _df(rows, headers):
@@ -829,8 +907,46 @@ def _on_canvas_click():
         })
 
 
-col1, col2 = st.columns([1, 2])
+# ---------------- sidebar: capture controls ----------------
+with st.sidebar:
+    st.markdown('<div class="side-head">CAPTURE &amp; LOG</div>', unsafe_allow_html=True)
+    uploaded = st.file_uploader(
+        "Scene photo(s)", type=["jpg", "jpeg", "png", "webp", "bmp"],
+        accept_multiple_files=True, on_change=_reset_derived,
+    )
+    files = [(f.name, f.getvalue()) for f in uploaded] if uploaded else []
+    st.caption(f"{len(files)} file(s) staged" if files else "JPG / PNG / WebP / BMP — analysis runs offline-safe.")
+    officer_id = st.text_input("Officer ID", placeholder="e.g. SUB-INSP-07")
+    lat_in = st.number_input("Latitude (opt.)", value=None, format="%.6f")
+    lng_in = st.number_input("Longitude (opt.)", value=None, format="%.6f")
+    analyze_btn = st.button("Analyze all photos", type="primary")
+    st.markdown('<hr class="side-hr">', unsafe_allow_html=True)
+    with st.expander("Background"):
+        st.radio(
+            "Effect",
+            ["Aurora", "Midnight", "Sunset", "Forest", "Neon", "Custom image", "Solid dark"],
+            horizontal=True, key="bg_theme",
+        )
+        if st.session_state.bg_theme == "Custom image":
+            bg_file = st.file_uploader(
+                "Background image", type=["jpg", "jpeg", "png", "webp"],
+                key="bg_file",
+            )
+            if bg_file is not None:
+                data = bg_file.getvalue()
+                if len(data) > 8 * 1024 * 1024:
+                    st.warning("Image too large — max 8 MB.")
+                else:
+                    st.session_state.bg_image_b64 = base64.b64encode(data).decode()
+                    st.caption("Custom background applied.")
 
+if analyze_btn:
+    if not files:
+        st.error("Upload at least one photo first.")
+    elif analyze_all(files, officer_id, lat_in, lng_in):
+        st.success(f"Analyzed {len(files)} photo(s) — review the overlay, add markers, then confirm the case.")
+
+# ---------------- main workspace ----------------
 merged = st.session_state.merged
 images = st.session_state.images
 if merged:
@@ -840,51 +956,10 @@ if merged:
     m3.metric("Stain candidates", len(merged.get("stains", [])))
     m4.metric("Evidence markers", len(st.session_state.markers))
 
-with col1:
+if merged:
     with st.container(border=True):
-        uploaded = st.file_uploader(
-            "Scene photo(s)", type=["jpg", "jpeg", "png", "webp", "bmp"],
-            accept_multiple_files=True, on_change=_reset_derived,
-        )
-        st.caption("JPG / PNG / WebP / BMP — analysis runs offline-safe.")
-        files = [(f.name, f.getvalue()) for f in uploaded] if uploaded else []
-        officer_id = st.text_input("Officer ID", placeholder="e.g. SUB-INSP-07")
-        lat_in = st.number_input("Latitude (opt.)", value=None, format="%.6f")
-        lng_in = st.number_input("Longitude (opt.)", value=None, format="%.6f")
-        analyze_btn = st.button("Analyze all photos", type="primary")
-
-        with st.expander("Background"):
-            st.radio(
-                "Effect",
-                ["Aurora", "Midnight", "Sunset", "Forest", "Neon", "Custom image", "Solid dark"],
-                horizontal=True, key="bg_theme",
-            )
-            if st.session_state.bg_theme == "Custom image":
-                bg_file = st.file_uploader(
-                    "Background image", type=["jpg", "jpeg", "png", "webp"],
-                    key="bg_file",
-                )
-                if bg_file is not None:
-                    data = bg_file.getvalue()
-                    if len(data) > 8 * 1024 * 1024:
-                        st.warning("Image too large — max 8 MB.")
-                    else:
-                        st.session_state.bg_image_b64 = base64.b64encode(data).decode()
-                        st.caption("Custom background applied — covers the whole app.")
-
-if analyze_btn:
-    if not files:
-        st.error("Upload at least one photo first.")
-    elif analyze_all(files, officer_id, lat_in, lng_in):
-        st.success(f"Analyzed {len(files)} photo(s) — review the overlay, add markers, then confirm the case.")
-
-with col2:
-    merged = st.session_state.merged
-    images = st.session_state.images
-    if merged:
-        with st.container(border=True):
-            names = list(images)
-            photo = st.session_state.photo_view
+        names = list(images)
+        photo = st.session_state.photo_view
         if photo not in names:
             photo = names[0]
         if len(names) > 1:
@@ -934,86 +1009,97 @@ with col2:
                     st.rerun()
                 if note != m.get("note"):
                     m["note"] = note
-    elif files:
-        st.image(files[0][1], width="stretch")
-        st.caption("Preview — click 'Analyze all photos' to run the triage pipeline.")
+elif files:
+    st.image(files[0][1], width="stretch")
+    st.caption("Preview — click 'Analyze all photos' to run the triage pipeline.")
 
 if merged:
+    tab_det, tab_ai, tab_confirm = st.tabs(["Detections & stains", "AI observations", "Confirm & log"])
+
+    with tab_det:
+        with st.container(border=True):
+            st.subheader("Objects detected")
+            st.dataframe(_df(merged.get("objects", []),
+                             ["class", "category", "confidence", "source", "photo"]),
+                         width="stretch", hide_index=True)
+            st.subheader("Blood-like stain candidates")
+            st.dataframe(_df(merged.get("stains", []),
+                             ["class", "confidence", "area_pct", "photo"]),
+                         width="stretch", hide_index=True)
+            tamper = merged.get("tamper", {})
+            _flag = tamper.get("flag", "inconclusive")
+            _kind = {"clean": "ok", "inconclusive": "warn", "suspicious": "warn", "tampered": "bad"}.get(_flag, "warn")
+            st.markdown(
+                f"**Tamper check:** <span class='pill pill-{_kind}'>{_flag}</span> "
+                f"<span class='muted'>ELA score {tamper.get('ela_score', 'n/a')} — heuristic, never a verdict</span>",
+                unsafe_allow_html=True,
+            )
+            notes = merged.get("processing_notes", [])
+            if notes:
+                st.info("\n".join(f"- {n}" for n in dict.fromkeys(notes)))
+
+    with tab_ai:
+        with st.container(border=True):
+            sug = merged.get("suggestions") or {}
+            if sug:
+                source, model = sug.get("source"), sug.get("model")
+                if source == "mock":
+                    mode_txt = "offline rule-based draft (no API key configured)"
+                else:
+                    mode_txt = f"LLM draft ({source} / {model})"
+                st.markdown("## AI observations and suggestions (triage draft)")
+                st.caption(f"Draft by: {mode_txt} — suggestions only, never evidence; an officer signs the final case.")
+                flags = sug.get("anomaly_flags") or []
+                steps = sug.get("next_steps") or []
+                if flags:
+                    chips = " ".join(f'<span class="chip chip-warn">{_esc(f)}</span>' for f in flags)
+                    st.markdown(f'<div class="chiprow"><span class="chip-label">Anomaly flags</span><br>{chips}</div>',
+                                unsafe_allow_html=True)
+                if steps:
+                    chips = " ".join(f'<span class="chip chip-info">{_esc(s)}</span>' for s in steps)
+                    st.markdown(f'<div class="chiprow"><span class="chip-label">Suggested next steps</span><br>{chips}</div>',
+                                unsafe_allow_html=True)
+                if sug.get("narrative"):
+                    with st.expander("AI-drafted observation report"):
+                        st.write(sug["narrative"])
+                        if st.button("Use as narrative draft", key="use_ai_narrative"):
+                            st.session_state.narrative = sug["narrative"]
+                            st.rerun()
+
+    with tab_confirm:
+        with st.container(border=True):
+            st.markdown("## Officer confirmation (human-in-the-loop)")
+            st.caption(f"Marks {len(st.session_state.markers)} evidence markers")
+            narrative = st.text_area(
+                "Officer narrative (write your own account; nothing is logged until you confirm)",
+                value=st.session_state.narrative, height=140,
+                placeholder="Describe the scene, the markers and your triage decisions...",
+            )
+            st.session_state.narrative = narrative
+            if st.button("Confirm & log case", type="primary"):
+                confirm(officer_id, narrative, lat_in, lng_in)
+            if st.session_state.last_case:
+                detail = st.session_state.last_case
+                st.markdown(case_card(detail))
+                report_json = json.dumps(_report_dict(detail), ensure_ascii=False, indent=2, default=str)
+                st.download_button("Download JSON report", report_json,
+                                   file_name=f"case-{detail['id']}.json", mime="application/json",
+                                   key="dl_json_report")
+                st.download_button("Download PDF report", _pdf_report(detail),
+                                   file_name=f"case-{detail['id']}.pdf", mime="application/pdf",
+                                   key="dl_pdf_report")
+
     with st.container(border=True):
-        st.caption(f"photos: {len(st.session_state.images)} · "
-                   f"evidence markers: {len(st.session_state.markers)}")
-
-        st.subheader("Objects detected")
-        st.dataframe(_df(merged.get("objects", []),
-                         ["class", "category", "confidence", "source", "photo"]),
-                     width="stretch", hide_index=True)
-        st.subheader("Blood-like stain candidates")
-        st.dataframe(_df(merged.get("stains", []),
-                         ["class", "confidence", "area_pct", "photo"]),
-                     width="stretch", hide_index=True)
-
-        tamper = merged.get("tamper", {})
-        st.markdown(f"**Tamper check:** `{tamper.get('flag', 'inconclusive')}` "
-                    f"(ELA score {tamper.get('ela_score', 'n/a')}) — heuristic, never a verdict")
-        notes = merged.get("processing_notes", [])
-        if notes:
-            st.info("\n".join(f"- {n}" for n in dict.fromkeys(notes)))
-
-        sug = merged.get("suggestions") or {}
-        if sug:
-            source, model = sug.get("source"), sug.get("model")
-            if source == "mock":
-                mode_txt = "offline rule-based draft (no API key configured)"
-            else:
-                mode_txt = f"LLM draft ({source} / {model})"
-            st.markdown("## AI observations and suggestions (triage draft)")
-            st.caption(f"Draft by: {mode_txt} — suggestions only, never evidence; an officer signs the final case.")
-            flags = sug.get("anomaly_flags") or []
-            steps = sug.get("next_steps") or []
-            if flags:
-                st.markdown("**Anomaly flags:**\n" + "\n".join(f"- {f}" for f in flags))
-            if steps:
-                st.markdown("**Suggested next steps:**\n" + "\n".join(f"- {s}" for s in steps))
-            if sug.get("narrative"):
-                with st.expander("AI-drafted observation report"):
-                    st.write(sug["narrative"])
-                    if st.button("Use as narrative draft", key="use_ai_narrative"):
-                        st.session_state.narrative = sug["narrative"]
-                        st.rerun()
-
-        st.markdown("## Officer confirmation (human-in-the-loop)")
-        st.caption(f"Marks {len(st.session_state.markers)} evidence markers")
-        narrative = st.text_area(
-            "Officer narrative (write your own account; nothing is logged until you confirm)",
-            value=st.session_state.narrative, height=140,
-            placeholder="Describe the scene, the markers and your triage decisions...",
-        )
-        st.session_state.narrative = narrative
-        if st.button("Confirm & log case", type="primary"):
-            confirm(officer_id, narrative, lat_in, lng_in)
-
-if st.session_state.last_case:
-    detail = st.session_state.last_case
-    st.markdown(case_card(detail))
-    report_json = json.dumps(_report_dict(detail), ensure_ascii=False, indent=2, default=str)
-    st.download_button("Download JSON report", report_json,
-                       file_name=f"case-{detail['id']}.json", mime="application/json",
-                       key="dl_json_report")
-    st.download_button("Download PDF report", _pdf_report(detail),
-                       file_name=f"case-{detail['id']}.pdf", mime="application/pdf",
-                       key="dl_pdf_report")
-
-with st.container(border=True):
-    st.markdown("## Past cases")
-    rows = []
-    for c in db.list_cases():
-        rows.append({"id": c["id"], "officer": c["officer_id"], "created_at": c["created_at"],
-                     "objects": c["object_count"], "stains": c["stain_count"],
-                     "markers": len(c.get("evidence_markers", []))})
-    if rows:
-        st.dataframe(pd.DataFrame(rows), width="stretch", hide_index=True)
-    else:
-        st.caption("No cases logged yet.")
+        st.markdown("## Past cases")
+        rows = []
+        for c in db.list_cases():
+            rows.append({"id": c["id"], "officer": c["officer_id"], "created_at": c["created_at"],
+                         "objects": c["object_count"], "stains": c["stain_count"],
+                         "markers": len(c.get("evidence_markers", []))})
+        if rows:
+            st.dataframe(pd.DataFrame(rows), width="stretch", hide_index=True)
+        else:
+            st.caption("No cases logged yet.")
 
 st.markdown(
     '<div class="foot">Crime Scene AI · offline-safe triage draft · '
