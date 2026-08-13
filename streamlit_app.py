@@ -94,8 +94,15 @@ def annotate(img_bgr, analysis):
             continue
         x1, y1, x2, y2 = (int(round(b[k])) for k in ("x1", "y1", "x2", "y2"))
         _dashed_rect(out, x1, y1, x2, y2, (0, 0, 220), thickness=2)
-        _label_chip(out, x1, y1, x2, y2, f"stain {s.get('confidence', 0):.2f}", (0, 0, 220))
+        _label_chip(out, x1, y1, x2, y2, f"blood stain {s.get('confidence', 0):.2f}", (0, 0, 220))
     return out
+
+
+def _on_upload():
+    st.session_state.analysis = None
+    st.session_state.image_id = None
+    st.session_state.narrative = ""
+    st.session_state.overlay_bytes = None
 
 
 def analyze(raw: bytes, officer_id, lat, lng):
@@ -195,17 +202,10 @@ st.markdown(
 col1, col2 = st.columns([1, 2])
 
 with col1:
-    uploaded = st.file_uploader("Scene photo", type=["jpg", "jpeg", "png", "webp", "bmp"])
-
-with col2:
-    if uploaded:
-        if st.session_state.get("overlay_bytes"):
-            st.caption("AI triage overlay — boxes are suggestions, not evidence")
-            st.image(st.session_state.overlay_bytes, width="stretch")
-        else:
-            st.image(uploaded, width="stretch")
-
-with col1:
+    uploaded = st.file_uploader(
+        "Scene photo", type=["jpg", "jpeg", "png", "webp", "bmp"],
+        on_change=_on_upload,
+    )
     officer_id = st.text_input("Officer ID", placeholder="e.g. SUB-INSP-07")
     lat_in = st.number_input("Latitude (opt.)", value=None, format="%.6f")
     lng_in = st.number_input("Longitude (opt.)", value=None, format="%.6f")
@@ -216,6 +216,14 @@ if analyze_btn:
         st.error("Upload a photo first.")
     else:
         analyze(uploaded.getvalue(), officer_id, lat_in, lng_in)
+
+with col2:
+    if uploaded:
+        if st.session_state.get("overlay_bytes"):
+            st.caption("AI triage overlay — boxes are suggestions, not evidence")
+            st.image(st.session_state.overlay_bytes, width="stretch")
+        else:
+            st.image(uploaded, width="stretch")
 
 a = st.session_state.analysis
 if a:
