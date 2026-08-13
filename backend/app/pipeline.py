@@ -1,16 +1,16 @@
 """Pipeline orchestration: image bytes → structured, explainable analysis.
 
-Runs vision modules, collects every degradation note, then hands a
-structured summary to the reasoning layer. The result is always a dict
-consumable by the React draft editor — and every component that was missing
-is listed in processing_notes (no silent degradation).
+Runs the vision modules (object detection, stain candidates, tamper/EXIF)
+and collects every degradation note. OCR and LLM-reasoning tiers are removed
+from the demo runtime so the app needs no API keys and never uploads photos
+off-device; every missing component is still surfaced in processing_notes
+(no silent degradation).
 """
 
 import cv2
 import numpy as np
 
-from .vision import detector, ocr, stains, tamper
-from .reasoning import reason
+from .vision import detector, stains, tamper
 
 
 def run_pipeline(raw: bytes) -> dict:
@@ -26,11 +26,6 @@ def run_pipeline(raw: bytes) -> dict:
     if not stain_list:
         notes.append("no red-dominant blobs above 0.02% area — no stain candidates")
 
-    ocr_list, ocr_notes = ocr.read_text(img_bgr)
-    notes.extend(ocr_notes)
-    if ocr_list:
-        notes.append(f"OCR extracted {len(ocr_list)} text regions")
-
     ela = tamper.ela_check(img_bgr)
     meta = tamper.read_exif(raw)
 
@@ -39,17 +34,8 @@ def run_pipeline(raw: bytes) -> dict:
         "height": int(img_bgr.shape[0]),
         "objects": objects,
         "stains": stain_list,
-        "ocr": ocr_list,
         "tamper": ela,
         "metadata": meta,
         "processing_notes": notes,
     }
-
-    llm = reason(analysis)
-    analysis["llm"] = llm
-    if llm.get("source") == "mock":
-        notes.append("LLM reasoning ran in offline mode (set OPENAI_API_KEY for API-based reasoning)")
-    else:
-        notes.append(f"LLM reasoning via API: {llm.get('model', 'unknown')}")
-    analysis["processing_notes"] = notes
     return analysis

@@ -1,10 +1,10 @@
 """Streamlit Community Cloud front-end for Crime Scene AI.
 
 Human-in-the-loop demo: upload one or more photos -> explainable analysis
-draft (objects, stain candidates, OCR) -> click-to-drop numbered evidence
-markers + a two-click reference scale for approximate size estimates (cm)
--> officer edits/confirms narrative -> confirmed report logged to the case
-file with audit trail and pattern matches -> JSON/PDF report export.
+draft (objects, stain candidates) -> click-to-drop numbered evidence markers
++ a two-click reference scale for approximate size estimates (cm)
+-> officer writes/confirms the narrative -> confirmed report logged to the
+case file with audit trail and pattern matches -> JSON/PDF report export.
 """
 
 import json
@@ -29,7 +29,6 @@ from streamlit_image_coordinates import streamlit_image_coordinates
 
 from app import config, db
 from app.pipeline import run_pipeline
-from app.reasoning import reason
 
 db.init_db()
 
@@ -165,7 +164,7 @@ def canvas_bgr(photo):
 
 
 def merge_analyses(analyses):
-    objs, stains, ocrs, notes = [], [], [], []
+    objs, stains, notes = [], [], []
     first = next(iter(analyses.values()))
     for name, a in analyses.items():
         for o in a.get("objects", []):
@@ -174,16 +173,12 @@ def merge_analyses(analyses):
         for s in a.get("stains", []):
             s.setdefault("photo", name)
             stains.append(s)
-        for t in a.get("ocr", []):
-            t.setdefault("photo", name)
-            ocrs.append(t)
         notes.extend(a.get("processing_notes", []))
     merged = {
         "width": first.get("width"),
         "height": first.get("height"),
         "objects": objs,
         "stains": stains,
-        "ocr": ocrs,
         "tamper": first.get("tamper", {}),
         "metadata": first.get("metadata", {}),
         "gps": first.get("gps"),
@@ -192,12 +187,6 @@ def merge_analyses(analyses):
     }
     if len(analyses) > 1:
         notes.append(f"scene compiled from {len(analyses)} photos — candidates merged for triage")
-    llm = reason(merged)
-    merged["llm"] = llm
-    if llm.get("source") == "mock":
-        notes.append("LLM reasoning ran in offline mode (set OPENAI_API_KEY for API-based reasoning)")
-    else:
-        notes.append(f"LLM reasoning via API: {llm.get('model', 'unknown')}")
     merged["processing_notes"] = notes
     return merged
 
@@ -233,7 +222,7 @@ def analyze_all(files, officer_id, lat, lng):
     st.session_state.scale_start = None
     st.session_state.canvas_epoch = 0
     st.session_state.merged = merge_analyses(analyses)
-    st.session_state.narrative = st.session_state.merged["llm"].get("narrative", "")
+    st.session_state.narrative = ""
     return True
 
 
@@ -246,22 +235,21 @@ def confirm(officer_id, narrative, lat, lng):
     gps = merged.get("gps")
     if gps is None and lat and lng:
         gps = {"lat": float(lat), "lng": float(lng)}
-    llm = merged.get("llm", {})
     payload = {
         "officer_id": officer_id or "unknown",
         "image_id": st.session_state.photo_view or next(iter(images), ""),
         "gps": gps,
         "captured_at": merged.get("captured_at"),
         "narrative": narrative,
-        "original_narrative": llm.get("narrative", ""),
-        "next_steps": llm.get("next_steps", []),
-        "anomaly_flags": llm.get("anomaly_flags", []),
+        "original_narrative": "",
+        "next_steps": [],
+        "anomaly_flags": [],
         "objects": merged.get("objects", []),
         "stains": merged.get("stains", []),
-        "ocr": merged.get("ocr", []),
+        "ocr": [],
         "tamper": merged.get("tamper", {}),
         "metadata": merged.get("metadata", {}),
-        "llm_source": llm.get("source", "mock"),
+        "llm_source": "manual",
         "processing_notes": merged.get("processing_notes", []),
         "evidence_markers": st.session_state.markers,
         "scale": st.session_state.scale,
@@ -271,14 +259,12 @@ def confirm(officer_id, narrative, lat, lng):
         {"actor": "system", "action": "case-opened",
          "detail": {"photos": len(payload["photos"]), "officer_id": officer_id}},
         {"actor": "ai", "action": "analysis-draft-generated",
-         "detail": {"source": payload["llm_source"],
-                    "objects": len(payload["objects"]), "stains": len(payload["stains"])}},
+         "detail": {"objects": len(payload["objects"]), "stains": len(payload["stains"])}},
         {"actor": "officer", "action": "confirmed-edited",
-         "detail": {"narrative_changed": payload["narrative"] != payload["original_narrative"],
+         "detail": {"narrative_written": bool(payload["narrative"]),
                     "objects_confirmed": len(payload["objects"]),
                     "evidence_markers": len(payload["evidence_markers"]),
-                    "scale_set": bool(payload.get("scale") and payload["scale"].get("known_cm")),
-                    "next_steps": len(payload["next_steps"])}},
+                    "scale_set": bool(payload.get("scale") and payload["scale"].get("known_cm"))}},
     ]
     case_id = db.insert_case(payload, log_entries)
     detail = db.get_case(case_id)
@@ -288,7 +274,7 @@ def confirm(officer_id, narrative, lat, lng):
 
 def case_card(c):
     md = f"## Case `{c['id']}` — confirmed\n"
-    md += f"- Officer: `{c['officer_id']}` · logged {c['created_at']} · LLM source `{c['llm_source']}`\n"
+    md += f"- Officer: `{c['officer_id']}` · logged {c['created_at']}\n"
     photos = c.get("photos") or [{"name": "(archive)", "image_id": c.get("image_id")}]
     md += "- Photos: " + ", ".join(f"`{p['name']}` (`{p['image_id']}`)" for p in photos) + "\n"
     markers = c.get("evidence_markers", [])
@@ -341,14 +327,9 @@ def _report_dict(detail):
         "captured_at": detail["captured_at"],
         "gps": detail.get("gps"),
         "photos": detail.get("photos", []),
-        "llm_source": detail["llm_source"],
         "narrative": detail["narrative"],
-        "original_narrative": detail.get("original_narrative", ""),
-        "anomaly_flags": detail.get("anomaly_flags", []),
-        "next_steps": detail.get("next_steps", []),
         "objects": clean(detail.get("objects", [])),
         "stains": clean(detail.get("stains", [])),
-        "ocr": clean(detail.get("ocr", [])),
         "evidence_markers": clean(detail.get("evidence_markers", [])),
         "scale": detail.get("scale"),
         "tamper": detail.get("tamper", {}),
@@ -382,7 +363,7 @@ def _pdf_report(detail):
 
     sec("Case")
     line(f"Officer: {detail['officer_id']}  |  Logged: {detail['created_at']}  |  "
-         f"Captured: {detail.get('captured_at')}  |  LLM source: {detail['llm_source']}")
+         f"Captured: {detail.get('captured_at')}")
     photos = detail.get("photos") or []
     if photos:
         line("Photos: " + ", ".join(p["name"] for p in photos))
@@ -391,15 +372,6 @@ def _pdf_report(detail):
 
     sec("Narrative (confirmed)")
     line(detail["narrative"])
-    if detail.get("original_narrative") and detail["original_narrative"] != detail["narrative"]:
-        line("AI draft: " + detail["original_narrative"])
-
-    sec("Anomaly flags")
-    for f in detail.get("anomaly_flags", []) or ["none"]:
-        line("- " + f)
-    sec("Suggested next steps")
-    for s in detail.get("next_steps", []) or ["none"]:
-        line("- " + s)
 
     matches = detail.get("matches", [])
     if matches:
@@ -442,11 +414,6 @@ def _pdf_report(detail):
         pdf.cell(18, 5, _pdf_text(s.get("area_pct", "")), border=1)
         pdf.cell(18, 5, _pdf_text(s.get("w_cm", "")), border=1)
         pdf.cell(18, 5, _pdf_text(s.get("h_cm", "")), border=1, new_x="LMARGIN", new_y="NEXT")
-
-    if detail.get("ocr"):
-        sec("OCR-extracted text")
-        for t in detail["ocr"]:
-            line(f'- "{t.get("text", "")}" ({_pct(t.get("confidence"))}) [{t.get("photo", "")}]')
 
     if detail.get("evidence_markers"):
         sec("Evidence markers")
@@ -593,12 +560,11 @@ with col2:
         st.caption("Preview — click 'Analyze all photos' to run the triage pipeline.")
 
 if merged:
-    llm = merged.get("llm", {})
     scale = st.session_state.scale
     pxcm = (scale or {}).get("px_per_cm")
     size_headers = ["w_cm", "h_cm"] if pxcm else []
     st.caption(f"photos: {len(st.session_state.images)} · "
-               f"LLM source: {llm.get('source', 'mock')} · evidence markers: {len(st.session_state.markers)}")
+               f"evidence markers: {len(st.session_state.markers)}")
 
     st.subheader("Objects detected")
     st.dataframe(_df(_sized(merged.get("objects", []), scale),
@@ -608,17 +574,9 @@ if merged:
     st.dataframe(_df(_sized(merged.get("stains", []), scale),
                      ["class", "confidence", "area_pct", "photo"] + size_headers),
                  width="stretch", hide_index=True)
-    st.subheader("OCR-extracted text")
-    st.dataframe(_df(merged.get("ocr", []), ["text", "confidence", "source", "photo"]),
-                 width="stretch", hide_index=True)
     if pxcm:
         st.caption("w_cm / h_cm estimated from the reference scale — approximate, plane-dependent.")
 
-    st.markdown(f"**Narrative (EN):** {llm.get('narrative', '—')}")
-    if llm.get("narrative_hi"):
-        st.markdown(f"**नैरेटिव (हिंदी):** {llm['narrative_hi']}")
-    st.markdown("**Anomaly flags:**\n" + "\n".join(f"- {x}" for x in llm.get("anomaly_flags", []) or ["none"]))
-    st.markdown("**Suggested next steps:**\n" + "\n".join(f"- {x}" for x in llm.get("next_steps", []) or ["none"]))
     tamper = merged.get("tamper", {})
     st.markdown(f"**Tamper check:** `{tamper.get('flag', 'inconclusive')}` "
                 f"(ELA score {tamper.get('ela_score', 'n/a')}) — heuristic, never a verdict")
@@ -629,7 +587,11 @@ if merged:
     st.markdown("## Officer confirmation (human-in-the-loop)")
     st.caption(f"Marks {len(st.session_state.markers)} evidence markers · "
                f"scale {'set' if scale and scale.get('known_cm') else 'not set'}")
-    narrative = st.text_area("Narrative (edit before confirming)", value=st.session_state.narrative, height=120)
+    narrative = st.text_area(
+        "Officer narrative (write your own account; nothing is logged until you confirm)",
+        value=st.session_state.narrative, height=140,
+        placeholder="Describe the scene, the markers and your triage decisions...",
+    )
     st.session_state.narrative = narrative
     if st.button("Confirm & log case", type="primary"):
         confirm(officer_id, narrative, lat_in, lng_in)
@@ -649,9 +611,8 @@ st.markdown("## Past cases")
 rows = []
 for c in db.list_cases():
     rows.append({"id": c["id"], "officer": c["officer_id"], "created_at": c["created_at"],
-                 "llm_source": c["llm_source"], "objects": c["object_count"],
-                 "stains": c["stain_count"],
-                 "next_steps": len(c["next_steps"]), "flags": str(c["anomaly_flags"])})
+                 "objects": c["object_count"], "stains": c["stain_count"],
+                 "markers": len(c.get("evidence_markers", []))})
 if rows:
     st.dataframe(pd.DataFrame(rows), width="stretch", hide_index=True)
 else:
