@@ -1,44 +1,88 @@
 <div align="center">
 
+<img src="docs/banner.png" alt="Crime Scene AI banner" width="100%"/>
+
 # 🕵️ Crime Scene AI
 
-**Smart Evidence Capture Assistant — Smart India Hackathon Demo**
+**Smart Evidence Capture Assistant · Smart India Hackathon (SIH) Demo**
 
-An end-to-end, offline-capable pipeline that turns a crime-scene photo into a
-**reviewable draft report**: vision analysis with confidence scores, LLM-generated
-narrative (English + Hindi), human-in-the-loop confirmation, chain-of-custody
-logging, and pattern matching against past cases.
+Turn a crime-scene photo into a **reviewable draft report** — explainable vision
+analysis, bilingual narrative (🇬🇧 EN / 🇮🇳 HI), human-in-the-loop confirmation,
+chain-of-custody logging, and pattern matching against past cases. **Fully
+offline-capable.**
 
-[![Python 3.10+](https://img.shields.io/badge/Python-3.10+-blue.svg)](https://www.python.org/downloads/)
-[![FastAPI](https://img.shields.io/badge/Backend-FastAPI-009688.svg)](https://fastapi.tiangolo.com/)
-[![React](https://img.shields.io/badge/Frontend-React%2018-61DAFB.svg)](https://react.dev/)
-[![License: MIT](https://img.shields.io/badge/License-MIT-green.svg)](LICENSE)
+<br/>
+
+[![Python 3.10+](https://img.shields.io/badge/Python-3.10+-3776AB?style=for-the-badge&logo=python&logoColor=white)](https://www.python.org/downloads/)
+[![FastAPI](https://img.shields.io/badge/FastAPI-009688?style=for-the-badge&logo=fastapi&logoColor=white)](https://fastapi.tiangolo.com/)
+[![React 18](https://img.shields.io/badge/React-18-61DAFB?style=for-the-badge&logo=react&logoColor=black)](https://react.dev/)
+[![TypeScript](https://img.shields.io/badge/TypeScript-3178C6?style=for-the-badge&logo=typescript&logoColor=white)](https://www.typescriptlang.org/)
+[![YOLOv8](https://img.shields.io/badge/YOLOv8-00FFFF?style=for-the-badge&logo=ultralytics&logoColor=black)](https://docs.ultralytics.com/)
+[![SQLite](https://img.shields.io/badge/SQLite-003B57?style=for-the-badge&logo=sqlite&logoColor=white)](https://www.sqlite.org/)
+[![MIT License](https://img.shields.io/badge/License-MIT-22c55e?style=for-the-badge&logo=open-source-initiative&logoColor=white)](LICENSE)
+
+**offline-first** · **explainable** · **human-in-the-loop** · **multilingual**
 
 </div>
 
 ---
 
+## 📑 Table of Contents
+
+- [✨ What it does](#-what-it-does)
+- [🧠 Key features](#-key-features)
+- [⚖️ Design principles](#️-design-principles)
+- [🏗️ Architecture](#️-architecture)
+- [📦 Tech stack](#-tech-stack)
+- [📁 Repo layout](#-repo-layout)
+- [🚀 Quick start](#-quick-start)
+- [🔌 Enabling the real models (optional)](#-enabling-the-real-models-optional)
+- [📡 API surface](#-api-surface)
+- [🖥️ Single-file demo apps](#️-single-file-demo-apps)
+- [⚠️ Honest limitations](#️-honest-limitations)
+- [📄 License](#-license)
+- [👤 Author](#-author)
+
+---
+
 ## ✨ What it does
 
-1. Officer uploads a crime-scene photo (EXIF GPS + timestamp read automatically).
-2. **Vision layer** extracts objects, blood-like stains, and text — *every*
-   detection carries a **confidence score, source, and basis** (no black-box verdicts).
-3. **Reasoning layer** drafts a preliminary observation report (English + Hindi),
-   anomaly flags, and next steps.
-4. **Officer reviews** — confirms, edits, or rejects every detection before anything is logged.
-5. Confirmed report is logged to the case file with **chain-of-custody metadata**
-   and matched against **past confirmed cases**.
+```
+📸 Upload → 🔍 Analyze → ✍️ Review draft → ✅ Confirm → 🗂️ Log & match
+```
 
-> ⚖️ **Human-in-the-loop by design**: AI output is always a *draft* — nothing is
-> evidence until the officer confirms it.
+1. **📸 Capture** — Officer uploads a crime-scene photo; EXIF GPS + timestamp are read automatically.
+2. **🔍 Analyze** — The vision layer extracts **objects**, **blood-like stains**, and **text** — every detection carries a *confidence score, source, and basis* (no black-box verdicts).
+3. **🤖 Reason** — The LLM drafts a preliminary observation report in **English + Hindi**, flags anomalies, and suggests next steps.
+4. **✍️ Review** — The officer **confirms, edits, or rejects** every detection before anything is logged.
+5. **🗂️ Log & match** — The confirmed report enters the case file with **chain-of-custody metadata** and is matched against **past confirmed cases**.
 
-## 🧠 Design principles
+> ⚖️ **Human-in-the-loop by design** — AI output is always a *draft*. Nothing
+> becomes evidence until the officer confirms it.
 
-1. **Working end-to-end demo** — runs fully offline with a mock LLM + heuristic vision; YOLO/OCR/LLM-API are plug-in upgrades.
-2. **Explainability** — every detection carries a confidence score, source (`yolo` / `hsv-heuristic` / `ocr`) and basis.
-3. **Offline / low-bandwidth** — vision heuristics + mock reasoning run on a laptop/edge box with zero network; EXIF-based capture, no cloud round-trip for the core demo.
+## 🧠 Key features
+
+| | Feature | Why it matters |
+|---|---|---|
+| 🎯 | **Explainable detections** | Confidence + source (`yolo` / `hsv-heuristic` / `ocr`) + basis on every finding |
+| 🩸 | **Blood-like stain heuristic** | HSV red-hue + morphology + area/saturation — always framed as a *candidate*, never a verdict |
+| 🔍 | **YOLOv8n object detection** | COCO model mapped to crime-relevant categories (knife → bladed weapon, vehicles, bags…) |
+| 📝 | **OCR text extraction** | EasyOCR / Tesseract (optional, degrades gracefully) |
+| 🕵️ | **Tamper check (ELA)** | JPEG re-encode difference + EXIF sanity — reported as `"inconclusive"` |
+| 🌐 | **Bilingual narrative** | English + Hindi draft reports; canonical English stored for honest matching |
+| 🔒 | **Chain of custody** | Officer ID, GPS, timestamps, full audit trail in SQLite |
+| 🔗 | **Pattern matching** | Category-overlap scoring against past confirmed cases |
+| 📴 | **Offline-first** | Heuristic vision + mock LLM run with zero network — real models are plug-in upgrades |
+
+## ⚖️ Design principles
+
+From the SIH brief — five pillars:
+
+1. **Working end-to-end demo** — runs fully offline with a mock LLM + heuristic vision; YOLO / OCR / LLM-API are plug-in upgrades.
+2. **Explainability** — every detection carries a confidence score, source and basis. No black-box verdicts.
+3. **Offline / low-bandwidth** — vision heuristics + mock reasoning run on a laptop / edge box with zero network; EXIF-based capture, no cloud round-trip for the core demo.
 4. **Human-in-the-loop** — nothing is logged until the officer confirms; the AI output is a *draft*.
-5. **Multilingual** — narrative is generated in a canonical English form, rendered/translated at the client (IndicTrans/LLM translation at render time; the DB stores the canonical form so pattern matching stays honest).
+5. **Multilingual** — narrative generated in canonical English, rendered / translated at the client (IndicTrans / LLM translation at render time); the DB stores the canonical form so pattern matching stays honest.
 
 ## 🏗️ Architecture
 
@@ -68,14 +112,17 @@ Pattern matching — category-overlap scoring vs past confirmed cases
 
 | Layer | Technology |
 |---|---|
-| Backend | Python 3.10+, FastAPI, uvicorn, OpenCV, Pillow, NumPy |
-| Vision (opt-in) | YOLOv8n (`ultralytics`), EasyOCR / Tesseract |
-| Reasoning | OpenAI-compatible LLM API, offline mock fallback |
-| Frontend | React 18, TypeScript, Vite (mobile-first) |
-| Storage | SQLite case log with audit trail |
-| Deploy | Docker · Hugging Face Spaces · Streamlit Community Cloud |
+| ⚙️ Backend | Python 3.10+ · FastAPI · uvicorn · OpenCV · Pillow · NumPy |
+| 👁️ Vision (opt-in) | YOLOv8n (`ultralytics`) · EasyOCR / Tesseract |
+| 🧠 Reasoning | OpenAI-compatible LLM API · offline mock fallback |
+| 🎨 Frontend | React 18 · TypeScript · Vite (mobile-first) |
+| 🗄️ Storage | SQLite case log with audit trail |
+| 🐳 Deploy | Docker · Hugging Face Spaces · Streamlit Community Cloud · Gradio |
 
 ## 📁 Repo layout
+
+<details>
+<summary><b>Click to expand</b> the full directory structure</summary>
 
 ```
 crime-scene-ai/
@@ -89,13 +136,17 @@ crime-scene-ai/
 ├── frontend/              React + Vite + TS (mobile-first)
 │   └── src/components/    UploadView, ImageAnnotator (canvas), ReportEditor, CaseList
 ├── scripts/               sample-image generator + end-to-end API test
+├── docs/                  banner + assets
 ├── gradio_app.py          Gradio port (Hugging Face Space)
 └── streamlit_app.py       Streamlit port (Community Cloud, torch-free YOLO via ONNX)
 ```
 
+</details>
+
 ## 🚀 Quick start
 
-### Backend
+<details open>
+<summary><b>1️⃣ Backend</b> — start the API on <code>:8000</code></summary>
 
 ```powershell
 cd backend
@@ -107,7 +158,10 @@ $env:OPENAI_API_KEY = "sk-..."        # OPTIONAL: real LLM reasoning
 uvicorn app.main:app --port 8000
 ```
 
-### Frontend (separate terminal)
+</details>
+
+<details open>
+<summary><b>2️⃣ Frontend</b> — start the dev UI on <code>:5173</code> (separate terminal)</summary>
 
 ```powershell
 cd frontend
@@ -115,7 +169,10 @@ npm install
 npm run dev                            # http://localhost:5173  (proxies /api → :8000)
 ```
 
-### End-to-end test without any UI
+</details>
+
+<details open>
+<summary><b>3️⃣ End-to-end test</b> — no UI needed</summary>
 
 ```powershell
 python scripts\make_sample_image.py    # synthetic "crime scene" photo (stain heuristic demo)
@@ -124,26 +181,24 @@ python scripts\demo_test.py http://localhost:8000 scripts\sample_real_photo.jpg
                                        # same loop with a REAL photo → YOLO vehicle/person detection
 ```
 
-### Single-file apps
-
-```bash
-python gradio_app.py      # http://localhost:7860
-streamlit run streamlit_app.py
-```
+</details>
 
 ## 🔌 Enabling the real models (optional)
 
 | Component | Install | Effect |
 |---|---|---|
-| YOLOv8n object detection | `pip install -r requirements-ai.txt` (first run downloads `yolov8n.pt` weights) | `source: "yolo"` detections for knife/car/bag/… |
-| OCR | `pip install -r requirements-ai.txt` + Tesseract binary: `winget install UB-Mannheim.TesseractOCR` (override path via `$env:TESSERACT_CMD`) | `ocr` entries in analysis |
-| LLM reasoning | `$env:OPENAI_API_KEY` (+ optional `OPENAI_BASE_URL`, `OPENAI_MODEL`) | `llm.source: "openai"` instead of `"mock"` |
+| 🎯 YOLOv8n object detection | `pip install -r requirements-ai.txt` (first run downloads `yolov8n.pt` weights) | `source: "yolo"` detections for knife/car/bag/… |
+| 📝 OCR | `pip install -r requirements-ai.txt` + Tesseract binary: `winget install UB-Mannheim.TesseractOCR` (override path via `$env:TESSERACT_CMD`) | `ocr` entries in analysis |
+| 🧠 LLM reasoning | `$env:OPENAI_API_KEY` (+ optional `OPENAI_BASE_URL`, `OPENAI_MODEL`) | `llm.source: "openai"` instead of `"mock"` |
 
-Everything degrades gracefully: when a component is missing, the pipeline
-continues and reports `processing_notes` explaining exactly what is missing
-and why — no silent behavior.
+Everything **degrades gracefully**: when a component is missing, the pipeline
+continues and reports `processing_notes` explaining exactly what is missing and
+why — no silent behavior. 🤝
 
 ## 📡 API surface
+
+<details>
+<summary><b>Click to expand</b> the FastAPI endpoints</summary>
 
 ```
 POST /api/upload                     multipart image (+ optional officer_id, lat, lng)
@@ -155,19 +210,38 @@ GET  /api/images/{image_id}          original uploaded image
 GET  /api/health
 ```
 
-## ⚠️ Honest limitations (demo-grade, not evidence-grade)
+</details>
+
+## 🖥️ Single-file demo apps
+
+| App | Run | Notes |
+|---|---|---|
+| 🚀 **Gradio** | `python gradio_app.py` | Hugging Face Space port, http://localhost:7860 |
+| 📊 **Streamlit** | `streamlit run streamlit_app.py` | Free Community Cloud deploy; torch-free YOLO via bundled ONNX |
+
+## ⚠️ Honest limitations
+
+*Demo-grade, not evidence-grade.* 🧯
 
 - Detections are **suggestions for triage**, never admissible evidence. The officer-confirmation step is the evidence boundary.
 - ELA tamper flag is a heuristic (works on visibly re-saved/cropped JPEGs); it is always reported with `"inconclusive"` framing and a note.
-- "Blood-like stain" heuristic detects red-dominant regions — it cannot distinguish blood from paint/rust/curry; the report says so.
+- The "blood-like stain" heuristic detects red-dominant regions — it **cannot** distinguish blood from paint/rust/curry; the report says so.
 - Pattern matching scores shared object categories — a triage aid, not case-linking evidence.
 
 ## 📄 License
 
-[MIT](LICENSE)
-
-Built for the **Smart India Hackathon (SIH)** demo track.
+[MIT](LICENSE) © Aritra Barman — built for the **Smart India Hackathon (SIH)** demo track.
 
 ## 👤 Author
 
-[Aritra Barman](https://github.com/Aritra709) — [GitHub](https://github.com/Aritra709)
+<div align="center">
+
+<a href="https://github.com/Aritra709">
+  <img src="https://github.com/Aritra709.png?size=120" width="120" height="120" alt="Aritra Barman avatar" style="border-radius:50%"/>
+</a>
+
+**Aritra Barman**
+
+[![GitHub](https://img.shields.io/badge/GitHub-Aritra709-181717?style=for-the-badge&logo=github&logoColor=white)](https://github.com/Aritra709)
+
+</div>
