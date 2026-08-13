@@ -258,7 +258,9 @@ if a:
     tamper = a.get("tamper", {})
     st.markdown(f"**Tamper check:** `{tamper.get('flag', 'inconclusive')}` "
                 f"(ELA score {tamper.get('ela_score', 'n/a')}) — heuristic, never a verdict")
-    st.caption("**Processing notes:**\n" + "\n".join(f"- {n}" for n in a.get("processing_notes", []) or ["none"]))
+    notes = a.get("processing_notes", [])
+    if notes:
+        st.info("\n".join(f"- {n}" for n in dict.fromkeys(notes)))
 
     st.markdown("## Officer confirmation (human-in-the-loop)")
     narrative = st.text_area("Narrative (edit before confirming)", value=st.session_state.narrative, height=120)
