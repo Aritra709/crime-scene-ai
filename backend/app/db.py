@@ -26,7 +26,10 @@ CREATE TABLE IF NOT EXISTS cases (
     tamper TEXT,
     metadata TEXT,
     llm_source TEXT,
-    processing_notes TEXT
+    processing_notes TEXT,
+    evidence_markers TEXT,
+    scale TEXT,
+    photos TEXT
 );
 CREATE TABLE IF NOT EXISTS case_log (
     id INTEGER PRIMARY KEY AUTOINCREMENT,
@@ -38,6 +41,12 @@ CREATE TABLE IF NOT EXISTS case_log (
 );
 """
 
+_MIGRATIONS = (
+    "ALTER TABLE cases ADD COLUMN evidence_markers TEXT DEFAULT '[]'",
+    "ALTER TABLE cases ADD COLUMN scale TEXT",
+    "ALTER TABLE cases ADD COLUMN photos TEXT DEFAULT '[]'",
+)
+
 
 def _connect() -> sqlite3.Connection:
     conn = sqlite3.connect(config.DB_PATH)
@@ -48,6 +57,11 @@ def _connect() -> sqlite3.Connection:
 def init_db() -> None:
     with _connect() as conn:
         conn.executescript(_SCHEMA)
+        for statement in _MIGRATIONS:
+            try:
+                conn.execute(statement)
+            except sqlite3.OperationalError:
+                pass
 
 
 def _now() -> str:
@@ -63,8 +77,9 @@ def insert_case(payload: dict, log_entries: list) -> str:
             """INSERT INTO cases (
                 id, officer_id, image_id, image_path, gps_lat, gps_lng, captured_at,
                 status, created_at, narrative, original_narrative, next_steps,
-                anomaly_flags, objects, stains, ocr, tamper, metadata, llm_source, processing_notes
-            ) VALUES (?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?)""",
+                anomaly_flags, objects, stains, ocr, tamper, metadata, llm_source,
+                processing_notes, evidence_markers, scale, photos
+            ) VALUES (?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?)""",
             (
                 case_id,
                 payload.get("officer_id") or "unknown",
@@ -86,6 +101,9 @@ def insert_case(payload: dict, log_entries: list) -> str:
                 json.dumps(payload.get("metadata", {}), ensure_ascii=False),
                 payload.get("llm_source", "unknown"),
                 json.dumps(payload.get("processing_notes", []), ensure_ascii=False),
+                json.dumps(payload.get("evidence_markers", []), ensure_ascii=False),
+                json.dumps(payload.get("scale"), ensure_ascii=False),
+                json.dumps(payload.get("photos", []), ensure_ascii=False),
             ),
         )
         for entry in log_entries:
@@ -193,6 +211,9 @@ def _row_detail(r: sqlite3.Row) -> dict:
         "metadata": json.loads(r["metadata"] or "{}"),
         "llm_source": r["llm_source"],
         "processing_notes": json.loads(r["processing_notes"] or "[]"),
+        "evidence_markers": json.loads(r["evidence_markers"] or "[]"),
+        "scale": json.loads(r["scale"] or "null"),
+        "photos": json.loads(r["photos"] or "[]"),
     }
 
 
