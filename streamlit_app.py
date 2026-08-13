@@ -164,69 +164,12 @@ def draw_scale(img, scale, photo):
     _pin_chip(img, (x1 + x2) // 2, (y1 + y2) // 2, label, (255, 0, 255))
 
 
-def draw_measurements(img, measurements, photo, pxcm):
-    for m in measurements:
-        if m.get("photo") != photo:
-            continue
-        (x1, y1), (x2, y2) = m["start"], m["end"]
-        color = (255, 215, 0)
-        cv2.line(img, (x1, y1), (x2, y2), color, 2)
-        cv2.circle(img, (x1, y1), 5, color, -1)
-        cv2.circle(img, (x2, y2), 5, color, -1)
-        cm = m.get("cm")
-        label = f"{cm:.1f} cm" if cm else f"{m['px_len']} px"
-        _pin_chip(img, (x1 + x2) // 2, (y1 + y2) // 2, label, color)
-
-
 def canvas_bgr(photo):
     img = st.session_state.images[photo]["bgr"].copy()
     img = annotate(img, st.session_state.analyses[photo])
     draw_pins(img, st.session_state.markers, photo)
-    pxcm = (st.session_state.scale or {}).get("px_per_cm")
-    draw_measurements(img, st.session_state.measurements, photo, pxcm)
     draw_scale(img, st.session_state.scale, photo)
     return img
-
-
-def _auto_measure(photo, img_bgr):
-    """Auto-detect straight lines (Hough) and return px-length measurements."""
-    gray = cv2.cvtColor(img_bgr, cv2.COLOR_BGR2GRAY)
-    gray = cv2.GaussianBlur(gray, (5, 5), 0)
-    edges = cv2.Canny(gray, 50, 150)
-    segs = cv2.HoughLinesP(edges, 1, np.pi / 180, threshold=50,
-                           minLineLength=40, maxLineGap=12)
-    if segs is None:
-        return []
-    segs = np.asarray(segs, dtype=float)
-    if segs.ndim == 3:
-        segs = segs.reshape(-1, 4)
-    if segs.ndim != 2 or segs.shape[1] != 4 or not len(segs):
-        return []
-
-    def _dup(k, px, py):
-        (ax, ay), (bx, by) = k["start"], k["end"]
-        l = math.hypot(bx - ax, by - ay) or 1
-        dist = abs((bx - ax) * (ay - py) - (ax - px) * (by - ay)) / l
-        ang = abs(k["angle"] - math.degrees(math.atan2(by - ay, bx - ax)) % 180)
-        return min(ang, 180 - ang) <= 8 and dist <= 30
-
-    kept = []
-    for (x1, y1, x2, y2) in segs:
-        px_len = int(round(math.hypot(x2 - x1, y2 - y1)))
-        if px_len < 40:
-            continue
-        mx, my = (x1 + x2) // 2, (y1 + y2) // 2
-        if any(_dup(k, mx, my) for k in kept):
-            continue
-        kept.append({
-            "photo": photo, "start": (int(x1), int(y1)), "end": (int(x2), int(y2)),
-            "px_len": px_len,
-            "angle": float(math.degrees(math.atan2(y2 - y1, x2 - x1)) % 180),
-        })
-    kept.sort(key=lambda k: k["px_len"], reverse=True)
-    for m in kept:
-        m.pop("angle", None)
-    return kept[:10]
 
 
 def merge_analyses(analyses):
@@ -288,12 +231,6 @@ def analyze_all(files, officer_id, lat, lng):
     st.session_state.scale_start = None
     st.session_state.measurements = []
     st.session_state.measure_seq = 0
-    for name, im in images.items():
-        for m in _auto_measure(name, im["bgr"]):
-            st.session_state.measure_seq += 1
-            m["id"] = st.session_state.measure_seq
-            m["ts"] = datetime.now(timezone.utc).isoformat()
-            st.session_state.measurements.append(m)
     st.session_state.merged = merge_analyses(analyses)
     st.session_state.merged["suggestions"] = reasoning.reason(st.session_state.merged)
     st.session_state.narrative = ""
@@ -678,32 +615,12 @@ with col2:
             )
             scale["known_cm"] = float(known_cm)
             scale["px_per_cm"] = scale["px_len"] / float(known_cm)
-            pxcm = scale["px_per_cm"]
-            for m in st.session_state.measurements:
-                if m.get("photo") == photo:
-                    m["cm"] = round(m["px_len"] / pxcm, 1)
             st.caption(f"Selected line = **{known_cm:g} cm** -> {scale['px_per_cm']:.2f} px/cm. "
-                       "Sizes assume objects lie near the calibration plane (approximate). "
-                       "Detected lines are measured automatically (gold, drawn on the photo).")
+                       "Sizes assume objects lie near the calibration plane (approximate).")
             if st.button("Clear scale reference", key=f"clr_scale_{photo}"):
                 st.session_state.scale = None
                 st.session_state.scale_start = None
-                for m in st.session_state.measurements:
-                    if m.get("photo") == photo:
-                        m["cm"] = None
                 st.rerun()
-        measurements = st.session_state.measurements
-        if measurements:
-            st.markdown("### Auto-measured lines")
-            st.caption("Straight lines detected automatically — lengths in cm once a scale reference is set.")
-            for m in list(measurements):
-                r1, r2 = st.columns([4, 1])
-                r1.caption(f"#{m['id']} · {m['photo']} · **{m['cm']:.1f} cm** ({m['px_len']} px)")
-                if r2.button(f"Remove #{m['id']}", key=f"ms_del_{m['id']}"):
-                    st.session_state.measurements = [
-                        x for x in st.session_state.measurements if x["id"] != m["id"]
-                    ]
-                    st.rerun()
         markers = st.session_state.markers
         if markers:
             st.markdown("### Evidence markers")
