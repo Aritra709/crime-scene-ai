@@ -791,55 +791,55 @@ with col2:
         with st.container(border=True):
             names = list(images)
             photo = st.session_state.photo_view
-        if photo not in names:
-            photo = names[0]
-        if len(names) > 1:
-            photo = st.radio("View photo", names, index=names.index(photo), horizontal=True, key="photo_sel")
-        st.session_state.photo_view = photo
-        mode = st.radio(
-            "Canvas mode", ["View overlay", "Add evidence markers"],
-            horizontal=True, key="canvas_mode",
-        )
-        canvas = canvas_bgr(photo)
-        oh, ow = canvas.shape[:2]
-        tw = min(CANVAS_W, ow)
-        th = max(1, int(round(oh * tw / ow)))
-        finger = "|".join((
-            photo, mode,
-            ";".join(f"{m['id']}:{m.get('photo', '')}:{m['x']}:{m['y']}" for m in st.session_state.markers),
-            ";".join(f"{m['id']}:{m.get('photo', '')}:{m['px_len']}" for m in st.session_state.measurements),
-        ))
-        cache = st.session_state["_canvas_cache"]
-        if cache.get("finger") != finger:
-            thumb = canvas if tw == ow else cv2.resize(canvas, (tw, th), interpolation=cv2.INTER_AREA)
-            ok, buf = cv2.imencode(".jpg", thumb, [cv2.IMWRITE_JPEG_QUALITY, 85])
-            cache = {"finger": finger, "bytes": buf.tobytes() if ok else b"",
-                     "rgb": cv2.cvtColor(thumb, cv2.COLOR_BGR2RGB)}
-            st.session_state["_canvas_cache"] = cache
-        if mode == "View overlay":
-            st.caption("AI triage overlay — boxes are suggestions, not evidence")
-            st.image(cache["bytes"])
-        else:
-            st.caption("Click anywhere on the photo to drop a numbered evidence marker.")
-            streamlit_image_coordinates(
-                cache["rgb"], width=tw, height=th, key=f"cv_{photo}",
-                on_click=_on_canvas_click, image_format="JPEG", jpeg_quality=85,
+            if photo not in names:
+                photo = names[0]
+            if len(names) > 1:
+                photo = st.radio("View photo", names, index=names.index(photo), horizontal=True, key="photo_sel")
+            st.session_state.photo_view = photo
+            mode = st.radio(
+                "Canvas mode", ["View overlay", "Add evidence markers"],
+                horizontal=True, key="canvas_mode",
             )
-        markers = st.session_state.markers
-        if markers:
-            st.markdown("### Evidence markers")
-            for m in list(markers):
-                r1, r2, r3 = st.columns([4, 3, 1])
-                note = r1.text_input(
-                    "note", value=m.get("note", ""), key=f"mk_note_{m['id']}",
-                    label_visibility="collapsed", placeholder=f"Note for marker #{m['id']}...",
+            canvas = canvas_bgr(photo)
+            oh, ow = canvas.shape[:2]
+            tw = min(CANVAS_W, ow)
+            th = max(1, int(round(oh * tw / ow)))
+            finger = "|".join((
+                photo, mode,
+                ";".join(f"{m['id']}:{m.get('photo', '')}:{m['x']}:{m['y']}" for m in st.session_state.markers),
+                ";".join(f"{m['id']}:{m.get('photo', '')}:{m['px_len']}" for m in st.session_state.measurements),
+            ))
+            cache = st.session_state["_canvas_cache"]
+            if cache.get("finger") != finger:
+                thumb = canvas if tw == ow else cv2.resize(canvas, (tw, th), interpolation=cv2.INTER_AREA)
+                ok, buf = cv2.imencode(".jpg", thumb, [cv2.IMWRITE_JPEG_QUALITY, 85])
+                cache = {"finger": finger, "bytes": buf.tobytes() if ok else b"",
+                         "rgb": cv2.cvtColor(thumb, cv2.COLOR_BGR2RGB)}
+                st.session_state["_canvas_cache"] = cache
+            if mode == "View overlay":
+                st.caption("AI triage overlay — boxes are suggestions, not evidence")
+                st.image(cache["bytes"])
+            else:
+                st.caption("Click anywhere on the photo to drop a numbered evidence marker.")
+                streamlit_image_coordinates(
+                    cache["rgb"], width=tw, height=th, key=f"cv_{photo}",
+                    on_click=_on_canvas_click, image_format="JPEG", jpeg_quality=85,
                 )
-                r2.caption(f"#{m['id']} · {m['photo']} · px({m['x']}, {m['y']})")
-                if r3.button(f"Remove #{m['id']}", key=f"mk_del_{m['id']}"):
-                    st.session_state.markers = [x for x in st.session_state.markers if x["id"] != m["id"]]
-                    st.rerun()
-                if note != m.get("note"):
-                    m["note"] = note
+            markers = st.session_state.markers
+            if markers:
+                st.markdown("### Evidence markers")
+                for m in list(markers):
+                    r1, r2, r3 = st.columns([4, 3, 1])
+                    note = r1.text_input(
+                        "note", value=m.get("note", ""), key=f"mk_note_{m['id']}",
+                        label_visibility="collapsed", placeholder=f"Note for marker #{m['id']}...",
+                    )
+                    r2.caption(f"#{m['id']} · {m['photo']} · px({m['x']}, {m['y']})")
+                    if r3.button(f"Remove #{m['id']}", key=f"mk_del_{m['id']}"):
+                        st.session_state.markers = [x for x in st.session_state.markers if x["id"] != m["id"]]
+                        st.rerun()
+                    if note != m.get("note"):
+                        m["note"] = note
     elif files:
         st.image(files[0][1], width="stretch")
         st.caption("Preview — click 'Analyze all photos' to run the triage pipeline.")
