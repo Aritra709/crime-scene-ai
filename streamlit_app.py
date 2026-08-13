@@ -778,10 +778,10 @@ with col1:
         lng_in = st.number_input("Longitude (opt.)", value=None, format="%.6f")
         analyze_btn = st.button("Analyze all photos", type="primary")
 
-    placed = "min(33.33vw, 245px)" if not bool(uploaded) else "none"
+    placed = "100%" if not bool(uploaded) else "0px"
     st.markdown(f"""
     <style>
-    div[data-testid="stColumn"]:has(> div[data-testid="stVerticalBlock"] > div[data-testid="stFileUploader"]) {{
+    div[data-testid="stColumn"]:has(div[data-testid="stFileUploader"]) {{
       transform: translateX({placed});
       transition: transform 0.55s ease-in-out;
       will-change: transform;
