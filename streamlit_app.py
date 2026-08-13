@@ -44,7 +44,6 @@ _DEFAULTS = {
     "marker_seq": 0,
     "scale": None,
     "scale_start": None,
-    "canvas_epoch": 0,
     "photo_view": None,
 }
 for _k, _v in _DEFAULTS.items():
@@ -220,7 +219,6 @@ def analyze_all(files, officer_id, lat, lng):
     st.session_state.marker_seq = 0
     st.session_state.scale = None
     st.session_state.scale_start = None
-    st.session_state.canvas_epoch = 0
     st.session_state.merged = merge_analyses(analyses)
     st.session_state.narrative = ""
     return True
@@ -433,8 +431,47 @@ def _reset_derived():
     st.session_state.marker_seq = 0
     st.session_state.scale = None
     st.session_state.scale_start = None
-    st.session_state.canvas_epoch = 0
     st.session_state.narrative = ""
+
+
+def _on_canvas_click():
+    """Fires once per canvas click (component's on_click) — no remount, no blink."""
+    photo = st.session_state.get("photo_view")
+    if not photo:
+        return
+    click = st.session_state.get(f"cv_{photo}")
+    if not isinstance(click, dict):
+        return
+    img = st.session_state.images[photo]["bgr"]
+    h, w = img.shape[:2]
+    cw, ch = click.get("width"), click.get("height")
+    if (cw and ch) and (abs(cw - w) > w * 0.05 or abs(ch - h) > h * 0.05):
+        st.warning("Canvas coordinate mismatch — marker placement may be off.")
+    x = min(max(int(round(click.get("x", 0))), 0), w - 1)
+    y = min(max(int(round(click.get("y", 0))), 0), h - 1)
+    mode = st.session_state.get("canvas_mode", "View overlay")
+    if mode == "Add evidence markers":
+        st.session_state.marker_seq += 1
+        st.session_state.markers.append({
+            "id": st.session_state.marker_seq, "photo": photo,
+            "x": x, "y": y, "note": "",
+            "ts": datetime.now(timezone.utc).isoformat(),
+        })
+    elif mode == "Set scale reference":
+        ss = st.session_state.get("scale_start")
+        if ss is None or ss.get("photo") != photo:
+            st.session_state.scale_start = {"photo": photo, "x": x, "y": y}
+        else:
+            px_len = int(round(math.hypot(x - ss["x"], y - ss["y"])))
+            if px_len < 10:
+                st.warning("Pick the two ends at least ~10 px apart, then re-click the first end.")
+                st.session_state.scale_start = None
+            else:
+                st.session_state.scale = {
+                    "photo": photo, "start": (ss["x"], ss["y"]), "end": (x, y),
+                    "px_len": px_len, "known_cm": None, "px_per_cm": None,
+                }
+                st.session_state.scale_start = None
 
 
 st.markdown(
@@ -484,47 +521,16 @@ with col2:
             st.image(cv2.cvtColor(canvas, cv2.COLOR_BGR2RGB))
         else:
             rgb = cv2.cvtColor(canvas, cv2.COLOR_BGR2RGB)
-            click = streamlit_image_coordinates(rgb, key=f"cv_{photo}_{st.session_state.canvas_epoch}")
             if mode == "Add evidence markers":
                 st.caption("Click anywhere on the photo to drop a numbered evidence marker.")
             elif st.session_state.scale_start is None:
                 st.caption(f"Step 1/3: click the first end of a known-length line on '{photo}'.")
             else:
                 st.caption("Step 2/3: click the second end of the line (must be a different point).")
-            if click is not None:
-                h, w = canvas.shape[:2]
-                cw, ch = click.get("width"), click.get("height")
-                if (cw and ch) and (abs(cw - w) > w * 0.05 or abs(ch - h) > h * 0.05):
-                    st.warning("Canvas coordinate mismatch — marker placement may be off. Re-open this mode.")
-                x = min(max(int(round(click.get("x", 0))), 0), w - 1)
-                y = min(max(int(round(click.get("y", 0))), 0), h - 1)
-                if mode == "Add evidence markers":
-                    st.session_state.marker_seq += 1
-                    st.session_state.markers.append({
-                        "id": st.session_state.marker_seq, "photo": photo,
-                        "x": x, "y": y, "note": "",
-                        "ts": datetime.now(timezone.utc).isoformat(),
-                    })
-                else:
-                    ss = st.session_state.scale_start
-                    sl = st.session_state.scale
-                    if ss is None or ss.get("photo") != photo:
-                        st.session_state.scale_start = {"photo": photo, "x": x, "y": y}
-                    else:
-                        px_len = int(round(math.hypot(x - ss["x"], y - ss["y"])))
-                        if px_len < 10:
-                            st.warning("Pick the two ends at least ~10 px apart, then re-click the first end.")
-                            st.session_state.scale_start = None
-                        else:
-                            st.session_state.scale = {
-                                "photo": photo, "start": (ss["x"], ss["y"]), "end": (x, y),
-                                "px_len": px_len, "known_cm": None, "px_per_cm": None,
-                            }
-                            st.session_state.scale_start = None
-                            st.session_state.canvas_epoch += 1
-                            st.rerun()
-                st.session_state.canvas_epoch += 1
-                st.rerun()
+            streamlit_image_coordinates(
+                rgb, key=f"cv_{photo}", on_click=_on_canvas_click,
+                image_format="JPEG", jpeg_quality=85, use_column_width=True,
+            )
         scale = st.session_state.scale
         if scale and scale.get("photo") == photo:
             st.markdown(f"**Scale reference** on `{photo}`: line is {scale['px_len']} px long.")
