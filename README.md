@@ -21,6 +21,13 @@ offline-capable.**
 [![SQLite](https://img.shields.io/badge/SQLite-003B57?style=for-the-badge&logo=sqlite&logoColor=white)](https://www.sqlite.org/)
 [![MIT License](https://img.shields.io/badge/License-MIT-22c55e?style=for-the-badge&logo=open-source-initiative&logoColor=white)](LICENSE)
 
+<br/>
+
+[![Stars](https://img.shields.io/github/stars/Aritra709/crime-scene-ai?style=flat-square&color=gold&label=★%20Stars)](https://github.com/Aritra709/crime-scene-ai/stargazers)
+[![Forks](https://img.shields.io/github/forks/Aritra709/crime-scene-ai?style=flat-square&color=blue&label=⑂%20Forks)](https://github.com/Aritra709/crime-scene-ai/forks)
+[![Last commit](https://img.shields.io/github/last-commit/Aritra709/crime-scene-ai?style=flat-square&color=9c27b0&label=🕒%20Last%20commit)](https://github.com/Aritra709/crime-scene-ai/commits/main)
+[![Repo size](https://img.shields.io/github/repo-size/Aritra709/crime-scene-ai?style=flat-square&color=teal&label=📦%20Size)](https://github.com/Aritra709/crime-scene-ai)
+
 **offline-first** · **explainable** · **human-in-the-loop** · **multilingual**
 
 </div>
@@ -55,6 +62,18 @@ offline-capable.**
 | 🔒 | **Chain of custody** | Officer ID, GPS, timestamps, full audit trail in SQLite |
 | 🔗 | **Pattern matching** | Category-overlap scoring against past confirmed cases |
 | 📴 | **Offline-first** | Heuristic vision + mock LLM run with zero network — real models are plug-in upgrades |
+
+## 📸 Demo in action
+
+<div align="center">
+
+**Upload a crime-scene photo…**
+
+<img src="docs/screenshot-analysis.jpg" alt="Crime scene analysis screenshot" width="640"/>
+
+…and get an explainable, bilingual draft report you can confirm or edit.
+
+</div>
 
 ## ⚖️ Design principles
 
@@ -209,6 +228,24 @@ GET  /api/health
 - ELA tamper flag is a heuristic (works on visibly re-saved/cropped JPEGs); it is always reported with `"inconclusive"` framing and a note.
 - The "blood-like stain" heuristic detects red-dominant regions — it **cannot** distinguish blood from paint/rust/curry; the report says so.
 - Pattern matching scores shared object categories — a triage aid, not case-linking evidence.
+
+## 🤝 Contributing
+
+Found a bug, or want to plug in a better model? PRs are welcome!
+
+1. 🍴 Fork the repo
+2. 🌿 Create a feature branch (`git checkout -b feat/your-idea`)
+3. ✍️ Commit your changes
+4. 🚀 Open a Pull Request
+
+Ideas that would be great next steps: EasyOCR for Devanagari text, a real
+LLM-backed Hindi translator, Docker Compose for one-command startup, and more
+crime-relevant YOLO classes.
+
+## ⭐ Support
+
+If this project helped you, consider giving it a **star** ⭐ — it helps the
+project reach more students and hackathon builders.
 
 ## 📄 License
 
