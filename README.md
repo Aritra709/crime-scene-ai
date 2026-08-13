@@ -21,13 +21,6 @@ offline-capable.**
 [![SQLite](https://img.shields.io/badge/SQLite-003B57?style=for-the-badge&logo=sqlite&logoColor=white)](https://www.sqlite.org/)
 [![MIT License](https://img.shields.io/badge/License-MIT-22c55e?style=for-the-badge&logo=open-source-initiative&logoColor=white)](LICENSE)
 
-<br/>
-
-[![Stars](https://img.shields.io/github/stars/Aritra709/crime-scene-ai?style=flat-square&color=gold&label=★%20Stars)](https://github.com/Aritra709/crime-scene-ai/stargazers)
-[![Forks](https://img.shields.io/github/forks/Aritra709/crime-scene-ai?style=flat-square&color=blue&label=⑂%20Forks)](https://github.com/Aritra709/crime-scene-ai/forks)
-[![Last commit](https://img.shields.io/github/last-commit/Aritra709/crime-scene-ai?style=flat-square&color=9c27b0&label=🕒%20Last%20commit)](https://github.com/Aritra709/crime-scene-ai/commits/main)
-[![Repo size](https://img.shields.io/github/repo-size/Aritra709/crime-scene-ai?style=flat-square&color=teal&label=📦%20Size)](https://github.com/Aritra709/crime-scene-ai)
-
 **offline-first** · **explainable** · **human-in-the-loop** · **multilingual**
 
 </div>
@@ -63,18 +56,6 @@ offline-capable.**
 | 🔗 | **Pattern matching** | Category-overlap scoring against past confirmed cases |
 | 📴 | **Offline-first** | Heuristic vision + mock LLM run with zero network — real models are plug-in upgrades |
 
-## 📸 Demo in action
-
-<div align="center">
-
-**Upload a crime-scene photo…**
-
-<img src="docs/screenshot-analysis.jpg" alt="Crime scene analysis screenshot" width="640"/>
-
-…and get an explainable, bilingual draft report you can confirm or edit.
-
-</div>
-
 ## ⚖️ Design principles
 
 From the SIH brief — five pillars:
@@ -89,23 +70,23 @@ From the SIH brief — five pillars:
 
 ```
 Photo + EXIF (GPS, timestamp)
-   │  POST /api/upload
-   ▼
+   │  POST /api/upload
+   ▼
 Vision layer (explainable, optional YOLO)
-   ├─ Object detection   YOLOv8n (ultralytics, COCO) — mapped to crime-relevant
-   │                      categories (knife→bladed weapon, vehicles, bags…)
-   ├─ Blood-like stain   HSV red-hue heuristic + morphology + area/saturation basis
-   ├─ OCR                EasyOCR/Tesseract (optional; skipped when absent)
-   └─ Tamper check       JPEG re-encode ELA diff + EXIF sanity (never a verdict)
-   ▼
+   ├─ Object detection   YOLOv8n (ultralytics, COCO) — mapped to crime-relevant
+   │                      categories (knife→bladed weapon, vehicles, bags…)
+   ├─ Blood-like stain   HSV red-hue heuristic + morphology + area/saturation basis
+   ├─ OCR                EasyOCR/Tesseract (optional; skipped when absent)
+   └─ Tamper check       JPEG re-encode ELA diff + EXIF sanity (never a verdict)
+   ▼
 Reasoning layer (LLM via API, or offline mock)
-   Structured detections → strict-JSON prompt → narrative + anomaly flags + next steps
-   ▼
+   Structured detections → strict-JSON prompt → narrative + anomaly flags + next steps
+   ▼
 Officer review (React UI)
-   Confirm / edit / reject every detection, stain, OCR line, narrative, next step
-   ▼
+   Confirm / edit / reject every detection, stain, OCR line, narrative, next step
+   ▼
 Case log (SQLite) — officer ID, GPS, timestamps, audit trail
-   ▼
+   ▼
 Pattern matching — category-overlap scoring vs past confirmed cases
 ```
 
@@ -127,19 +108,19 @@ Pattern matching — category-overlap scoring vs past confirmed cases
 
 ```
 crime-scene-ai/
-├── backend/               FastAPI service (Python 3.10+)
-│   ├── app/main.py        API entrypoint, static image serving
-│   ├── app/pipeline.py    orchestrates vision → reasoning
-│   ├── app/vision/        detector.py (YOLO), stains.py, ocr.py, tamper.py
-│   ├── app/reasoning.py   LLM call (OpenAI-compatible) + offline mock
-│   ├── app/db.py          SQLite case log + pattern matching
-│   └── data/              images + cases.db (gitignored)
-├── frontend/              React + Vite + TS (mobile-first)
-│   └── src/components/    UploadView, ImageAnnotator (canvas), ReportEditor, CaseList
-├── scripts/               sample-image generator + end-to-end API test
-├── docs/                  banner + assets
-├── gradio_app.py          Gradio port (Hugging Face Space)
-└── streamlit_app.py       Streamlit port (Community Cloud, torch-free YOLO via ONNX)
+├── backend/               FastAPI service (Python 3.10+)
+│   ├── app/main.py        API entrypoint, static image serving
+│   ├── app/pipeline.py    orchestrates vision → reasoning
+│   ├── app/vision/        detector.py (YOLO), stains.py, ocr.py, tamper.py
+│   ├── app/reasoning.py   LLM call (OpenAI-compatible) + offline mock
+│   ├── app/db.py          SQLite case log + pattern matching
+│   └── data/              images + cases.db (gitignored)
+├── frontend/              React + Vite + TS (mobile-first)
+│   └── src/components/    UploadView, ImageAnnotator (canvas), ReportEditor, CaseList
+├── scripts/               sample-image generator + end-to-end API test
+├── docs/                  banner + assets
+├── gradio_app.py          Gradio port (Hugging Face Space)
+└── streamlit_app.py       Streamlit port (Community Cloud, torch-free YOLO via ONNX)
 ```
 
 </details>
@@ -153,9 +134,9 @@ crime-scene-ai/
 cd backend
 python -m venv .venv
 .\.venv\Scripts\Activate.ps1
-pip install -r requirements.txt        # core (offline demo ready)
-pip install -r requirements-ai.txt     # OPTIONAL: YOLO + OCR (needs internet once)
-$env:OPENAI_API_KEY = "sk-..."        # OPTIONAL: real LLM reasoning
+pip install -r requirements.txt        # core (offline demo ready)
+pip install -r requirements-ai.txt     # OPTIONAL: YOLO + OCR (needs internet once)
+$env:OPENAI_API_KEY = "sk-..."        # OPTIONAL: real LLM reasoning
 uvicorn app.main:app --port 8000
 ```
 
@@ -167,7 +148,7 @@ uvicorn app.main:app --port 8000
 ```powershell
 cd frontend
 npm install
-npm run dev                            # http://localhost:5173  (proxies /api → :8000)
+npm run dev                            # http://localhost:5173  (proxies /api → :8000)
 ```
 
 </details>
@@ -176,10 +157,10 @@ npm run dev                            # http://localhost:5173  (proxies /api �
 <summary><b>3️⃣ End-to-end test</b> — no UI needed</summary>
 
 ```powershell
-python scripts\make_sample_image.py    # synthetic "crime scene" photo (stain heuristic demo)
-python scripts\demo_test.py            # upload → analysis → confirm → matches
+python scripts\make_sample_image.py    # synthetic "crime scene" photo (stain heuristic demo)
+python scripts\demo_test.py            # upload → analysis → confirm → matches
 python scripts\demo_test.py http://localhost:8000 scripts\sample_real_photo.jpg
-                                       # same loop with a REAL photo → YOLO vehicle/person detection
+                                       # same loop with a REAL photo → YOLO vehicle/person detection
 ```
 
 </details>
@@ -202,13 +183,13 @@ why — no silent behavior. 🤝
 <summary><b>Click to expand</b> the FastAPI endpoints</summary>
 
 ```
-POST /api/upload                     multipart image (+ optional officer_id, lat, lng)
-                                     → full analysis (detections, stains, ocr, tamper, llm draft)
-POST /api/cases                      officer-confirmed report → case log entry
-GET  /api/cases                      list (id, officer, timestamps, counts, llm source)
-GET  /api/cases/{id}                 full detail incl. audit log + pattern matches
-GET  /api/images/{image_id}          original uploaded image
-GET  /api/health
+POST /api/upload                     multipart image (+ optional officer_id, lat, lng)
+                                     → full analysis (detections, stains, ocr, tamper, llm draft)
+POST /api/cases                      officer-confirmed report → case log entry
+GET  /api/cases                      list (id, officer, timestamps, counts, llm source)
+GET  /api/cases/{id}                 full detail incl. audit log + pattern matches
+GET  /api/images/{image_id}          original uploaded image
+GET  /api/health
 ```
 
 </details>
@@ -229,24 +210,6 @@ GET  /api/health
 - The "blood-like stain" heuristic detects red-dominant regions — it **cannot** distinguish blood from paint/rust/curry; the report says so.
 - Pattern matching scores shared object categories — a triage aid, not case-linking evidence.
 
-## 🤝 Contributing
-
-Found a bug, or want to plug in a better model? PRs are welcome!
-
-1. 🍴 Fork the repo
-2. 🌿 Create a feature branch (`git checkout -b feat/your-idea`)
-3. ✍️ Commit your changes
-4. 🚀 Open a Pull Request
-
-Ideas that would be great next steps: EasyOCR for Devanagari text, a real
-LLM-backed Hindi translator, Docker Compose for one-command startup, and more
-crime-relevant YOLO classes.
-
-## ⭐ Support
-
-If this project helped you, consider giving it a **star** ⭐ — it helps the
-project reach more students and hackathon builders.
-
 ## 📄 License
 
 [MIT](LICENSE) © Aritra Barman — built for the **Smart India Hackathon (SIH)** demo track.
@@ -256,7 +219,7 @@ project reach more students and hackathon builders.
 <div align="center">
 
 <a href="https://github.com/Aritra709">
-  <img src="https://github.com/Aritra709.png?size=120" width="120" height="120" alt="Aritra Barman avatar" style="border-radius:50%"/>
+  <img src="https://github.com/Aritra709.png?size=120" width="120" height="120" alt="Aritra Barman avatar" style="border-radius:50%"/>
 </a>
 
 **Aritra Barman**
