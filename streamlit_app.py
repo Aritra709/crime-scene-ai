@@ -52,8 +52,24 @@ def _df(rows, headers):
     return pd.DataFrame(data)
 
 
-def annotate(img_bgr, objects):
-    """Draw detection boxes + class labels on a copy of the image."""
+def _dashed_rect(img, x1, y1, x2, y2, color, thickness=2, dash=10):
+    for xs in range(x1, x2, dash * 2):
+        cv2.line(img, (xs, y1), (min(xs + dash, x2), y1), color, thickness)
+        cv2.line(img, (xs, y2), (min(xs + dash, x2), y2), color, thickness)
+    for ys in range(y1, y2, dash * 2):
+        cv2.line(img, (x1, ys), (x1, min(ys + dash, y2)), color, thickness)
+        cv2.line(img, (x2, ys), (x2, min(ys + dash, y2)), color, thickness)
+
+
+def _label_chip(img, x1, y1, x2, y2, text, color):
+    (tw, th), _ = cv2.getTextSize(text, cv2.FONT_HERSHEY_SIMPLEX, 0.55, 1)
+    ty = y1 - 4 if y1 - th - 6 > 0 else y2 + th + 4
+    cv2.rectangle(img, (x1, ty - th - 4), (x1 + tw + 4, ty + 4), color, -1)
+    cv2.putText(img, text, (x1 + 2, ty), cv2.FONT_HERSHEY_SIMPLEX, 0.55, (0, 0, 0), 1)
+
+
+def annotate(img_bgr, analysis):
+    """Draw detection boxes (solid) + stain candidates (dashed) on one image."""
     out = img_bgr.copy()
     colors = {
         "person": (0, 200, 0),
@@ -64,18 +80,21 @@ def annotate(img_bgr, objects):
         "electronic device": (200, 0, 200),
         "discarded item": (180, 180, 0),
     }
-    for d in objects:
+    for d in analysis.get("objects", []):
         b = d.get("bbox")
         if not b:
             continue
         x1, y1, x2, y2 = (int(round(b[k])) for k in ("x1", "y1", "x2", "y2"))
         color = colors.get(d.get("category"), (0, 255, 255))
         cv2.rectangle(out, (x1, y1), (x2, y2), color, 2)
-        label = f"{d.get('class', '?')} {d.get('confidence', 0):.2f}"
-        (tw, th), _ = cv2.getTextSize(label, cv2.FONT_HERSHEY_SIMPLEX, 0.55, 1)
-        ty = y1 - 4 if y1 - th - 6 > 0 else y2 + th + 4
-        cv2.rectangle(out, (x1, ty - th - 4), (x1 + tw + 4, ty + 4), color, -1)
-        cv2.putText(out, label, (x1 + 2, ty), cv2.FONT_HERSHEY_SIMPLEX, 0.55, (0, 0, 0), 1)
+        _label_chip(out, x1, y1, x2, y2, f"{d.get('class', '?')} {d.get('confidence', 0):.2f}", color)
+    for s in analysis.get("stains", []):
+        b = s.get("bbox")
+        if not b:
+            continue
+        x1, y1, x2, y2 = (int(round(b[k])) for k in ("x1", "y1", "x2", "y2"))
+        _dashed_rect(out, x1, y1, x2, y2, (0, 0, 220), thickness=2)
+        _label_chip(out, x1, y1, x2, y2, f"stain {s.get('confidence', 0):.2f}", (0, 0, 220))
     return out
 
 
@@ -89,7 +108,7 @@ def analyze(raw: bytes, officer_id, lat, lng):
     image_id = uuid.uuid4().hex[:12]
     img_bgr = cv2.imdecode(np.frombuffer(raw, np.uint8), cv2.IMREAD_COLOR)
     cv2.imwrite(str(config.IMAGES_DIR / f"{image_id}.jpg"), img_bgr, [cv2.IMWRITE_JPEG_QUALITY, 92])
-    annotated = annotate(img_bgr, analysis.get("objects", []))
+    annotated = annotate(img_bgr, analysis)
     ok, buf = cv2.imencode(".jpg", annotated, [cv2.IMWRITE_JPEG_QUALITY, 92])
     st.session_state.overlay_bytes = buf.tobytes() if ok else None
 
@@ -180,10 +199,11 @@ with col1:
 
 with col2:
     if uploaded:
-        st.image(uploaded, width="stretch")
         if st.session_state.get("overlay_bytes"):
-            st.caption("Analysis overlay — boxes are AI suggestions for triage, not evidence")
+            st.caption("AI triage overlay — boxes are suggestions, not evidence")
             st.image(st.session_state.overlay_bytes, width="stretch")
+        else:
+            st.image(uploaded, width="stretch")
 
 with col1:
     officer_id = st.text_input("Officer ID", placeholder="e.g. SUB-INSP-07")
