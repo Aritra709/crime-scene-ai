@@ -51,6 +51,160 @@ for _k, _v in _DEFAULTS.items():
     if _k not in st.session_state:
         st.session_state[_k] = _v
 
+_CSS = """
+<style>
+@import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap');
+
+html, body, [class*="css"], [data-testid="stApp"] {
+  font-family: 'Inter', 'Segoe UI', system-ui, -apple-system, sans-serif;
+}
+
+[data-testid="stAppViewContainer"] {
+  background:
+    radial-gradient(1100px 520px at 12% -12%, rgba(99, 102, 241, 0.16), transparent 60%),
+    radial-gradient(900px 480px at 108% 4%, rgba(34, 211, 238, 0.10), transparent 55%),
+    linear-gradient(180deg, #0b1020 0%, #070b16 100%);
+}
+
+[data-testid="stHeader"] { background: rgba(7, 11, 22, 0.55); backdrop-filter: blur(8px); }
+
+[data-testid="stMainBlockContainer"], [data-testid="stBlockContainer"], .block-container {
+  padding-top: 2.2rem; max-width: 1240px;
+}
+
+.hero { margin-bottom: 0.2rem; }
+.hero .badge {
+  display: inline-block; font-size: 0.72rem; font-weight: 700; letter-spacing: 0.18em;
+  color: #a5b4fc; border: 1px solid rgba(129, 140, 248, 0.45); border-radius: 999px;
+  padding: 0.28rem 0.9rem; background: rgba(99, 102, 241, 0.12);
+}
+.hero h1 {
+  margin: 0.7rem 0 0.35rem; font-size: 2.3rem; font-weight: 800; letter-spacing: -0.03em;
+  background: linear-gradient(92deg, #a5b4fc 0%, #67e8f9 60%, #6ee7b7 100%);
+  -webkit-background-clip: text; background-clip: text; color: transparent;
+}
+.hero p.sub { color: #94a3b8; font-size: 0.98rem; line-height: 1.6; max-width: 760px; margin: 0; }
+.hero p.sub b { color: #e2e8f0; font-weight: 600; }
+.hero hr.divider {
+  margin: 1.3rem 0 0; border: 0; height: 1px;
+  background: linear-gradient(90deg, rgba(129,140,248,.55), rgba(103,232,249,.35), transparent);
+}
+
+[data-testid="stHeading"] h1, [data-testid="stHeading"] h2, [data-testid="stHeading"] h3 {
+  letter-spacing: -0.01em;
+}
+[data-testid="stSubheader"], [data-testid="stHeading"] h3 {
+  font-size: 0.9rem !important; font-weight: 700 !important; letter-spacing: 0.1em;
+  text-transform: uppercase; color: #93c5fd !important;
+}
+
+[data-testid="stMetric"] {
+  background: linear-gradient(165deg, rgba(148,163,184,0.10), rgba(148,163,184,0.02));
+  border: 1px solid rgba(148,163,184,0.22); border-radius: 14px;
+  padding: 0.7rem 1rem 0.85rem;
+}
+[data-testid="stMetric"] label {
+  color: #94a3b8; font-size: 0.76rem; letter-spacing: 0.05em; text-transform: uppercase;
+}
+[data-testid="stMetricValue"] { font-size: 1.5rem; font-weight: 800; color: #f1f5f9; }
+
+[data-testid="stVerticalBlockBorderWrapper"] {
+  background: rgba(148, 163, 184, 0.045);
+  border: 1px solid rgba(148, 163, 184, 0.16);
+  border-radius: 16px;
+  padding: 1rem 1.1rem !important;
+}
+
+[data-testid="stBaseButton-secondary"], .stButton > button, .stDownloadButton button {
+  border-radius: 10px; font-weight: 600; padding: 0.42rem 1.05rem; min-height: 2.4rem;
+  border: 1px solid rgba(148, 163, 184, 0.28); background: rgba(148, 163, 184, 0.08);
+  color: #e2e8f0; transition: all 0.15s ease;
+}
+[data-testid="stBaseButton-secondary"]:hover, .stButton > button:hover {
+  border-color: rgba(129, 140, 248, 0.7); background: rgba(129, 140, 248, 0.14); color: #fff;
+}
+[data-testid="stBaseButton-primary"], .stButton > button[kind="primary"] {
+  background: linear-gradient(92deg, #6366f1 0%, #06b6d4 100%); border: none; color: #fff;
+  box-shadow: 0 10px 26px -10px rgba(99, 102, 241, 0.55);
+}
+[data-testid="stBaseButton-primary"]:hover, .stButton > button[kind="primary"]:hover {
+  background: linear-gradient(92deg, #545ef0 0%, #0891b2 100%);
+  box-shadow: 0 14px 30px -10px rgba(99, 102, 241, 0.7);
+}
+
+[data-testid="stTextInput"] input, [data-testid="stNumberInput"] input,
+[data-testid="stTextArea"] textarea,
+[data-testid="stBaseInput-stTextInput"] input, [data-testid="stBaseInput-stNumberInput"] input {
+  background: rgba(15, 23, 42, 0.75); border: 1px solid rgba(148, 163, 184, 0.22);
+  border-radius: 10px; color: #e2e8f0; caret-color: #818cf8;
+}
+[data-testid="stTextInput"] input:focus, [data-testid="stNumberInput"] input:focus,
+[data-testid="stTextArea"] textarea:focus {
+  border-color: #818cf8; box-shadow: 0 0 0 3px rgba(129, 140, 248, 0.16);
+}
+[data-testid="stTextInput"] label, [data-testid="stNumberInput"] label,
+[data-testid="stTextArea"] label, [data-testid="stFileUploader"] label {
+  color: #a9b7d0 !important; font-weight: 500;
+}
+
+[data-testid="stFileUploaderDropzone"] {
+  background: rgba(15, 23, 42, 0.55);
+  border: 1.5px dashed rgba(148, 163, 184, 0.35);
+  border-radius: 14px; transition: border-color 0.15s ease;
+}
+[data-testid="stFileUploaderDropzone"]:hover { border-color: rgba(129, 140, 248, 0.8); }
+[data-testid="stFileUploaderDropzone"] button {
+  background: rgba(129, 140, 248, 0.16); border-radius: 8px;
+}
+
+[data-testid="stRadio"] > div { flex-wrap: wrap; gap: 0.45rem; }
+[data-testid="stRadio"] label {
+  background: rgba(148, 163, 184, 0.07); border: 1px solid rgba(148, 163, 184, 0.2);
+  border-radius: 999px; padding: 0.28rem 0.95rem; transition: all 0.15s ease; color: #cbd5e1;
+}
+[data-testid="stRadio"] label:has(input:checked) {
+  background: linear-gradient(92deg, #6366f1, #06b6d4); border-color: transparent; color: #fff;
+}
+
+[data-testid="stDataFrame"] {
+  border: 1px solid rgba(148, 163, 184, 0.2); border-radius: 12px; overflow: hidden;
+}
+
+[data-testid="stCaption"], .stCaption { color: #7c8db0; }
+
+[data-testid="stExpander"] {
+  border: 1px solid rgba(148, 163, 184, 0.18); border-radius: 12px;
+  background: rgba(148, 163, 184, 0.04);
+}
+[data-testid="stInfo"] {
+  background: rgba(59, 130, 246, 0.10); border: 1px solid rgba(96, 165, 250, 0.25);
+  border-radius: 12px; color: #bfdbfe;
+}
+
+.foot {
+  margin: 2.6rem 0 1rem; padding-top: 1.1rem;
+  border-top: 1px solid rgba(148, 163, 184, 0.15);
+  color: #5b6b8c; font-size: 0.8rem; text-align: center; letter-spacing: 0.04em;
+}
+
+::-webkit-scrollbar { width: 10px; height: 10px; }
+::-webkit-scrollbar-thumb { background: rgba(148, 163, 184, 0.25); border-radius: 8px; }
+</style>
+"""
+
+_HERO = """
+<div class="hero">
+  <span class="badge">EVIDENCE CAPTURE ASSISTANT</span>
+  <h1>Crime Scene AI</h1>
+  <p class="sub">Upload crime-scene photos — detections, stain candidates and the narrative are a
+  <b>suggestion for triage</b>; nothing is logged until an officer confirms it (evidence boundary).</p>
+  <hr class="divider">
+</div>
+"""
+
+st.markdown(_CSS, unsafe_allow_html=True)
+st.markdown(_HERO, unsafe_allow_html=True)
+
 
 def _fmt_basis(basis):
     if not basis:
@@ -454,25 +608,29 @@ def _on_canvas_click():
         })
 
 
-st.markdown(
-    "# Crime Scene AI — Smart Evidence Capture Assistant\n"
-    "Upload **one or more** crime-scene photos. Detections, stain candidates and "
-    "the narrative are a **suggestion for triage** — nothing is logged until you "
-    "confirm it (evidence boundary)."
-)
-
 col1, col2 = st.columns([1, 2])
 
+merged = st.session_state.merged
+images = st.session_state.images
+if merged:
+    m1, m2, m3, m4 = st.columns(4)
+    m1.metric("Photos", len(images))
+    m2.metric("Objects", len(merged.get("objects", [])))
+    m3.metric("Stain candidates", len(merged.get("stains", [])))
+    m4.metric("Evidence markers", len(st.session_state.markers))
+
 with col1:
-    uploaded = st.file_uploader(
-        "Scene photo(s)", type=["jpg", "jpeg", "png", "webp", "bmp"],
-        accept_multiple_files=True, on_change=_reset_derived,
-    )
-    files = [(f.name, f.getvalue()) for f in uploaded] if uploaded else []
-    officer_id = st.text_input("Officer ID", placeholder="e.g. SUB-INSP-07")
-    lat_in = st.number_input("Latitude (opt.)", value=None, format="%.6f")
-    lng_in = st.number_input("Longitude (opt.)", value=None, format="%.6f")
-    analyze_btn = st.button("Analyze all photos", type="primary")
+    with st.container(border=True):
+        uploaded = st.file_uploader(
+            "Scene photo(s)", type=["jpg", "jpeg", "png", "webp", "bmp"],
+            accept_multiple_files=True, on_change=_reset_derived,
+        )
+        st.caption("JPG / PNG / WebP / BMP — analysis runs offline-safe.")
+        files = [(f.name, f.getvalue()) for f in uploaded] if uploaded else []
+        officer_id = st.text_input("Officer ID", placeholder="e.g. SUB-INSP-07")
+        lat_in = st.number_input("Latitude (opt.)", value=None, format="%.6f")
+        lng_in = st.number_input("Longitude (opt.)", value=None, format="%.6f")
+        analyze_btn = st.button("Analyze all photos", type="primary")
 
 if analyze_btn:
     if not files:
@@ -484,8 +642,9 @@ with col2:
     merged = st.session_state.merged
     images = st.session_state.images
     if merged:
-        names = list(images)
-        photo = st.session_state.photo_view
+        with st.container(border=True):
+            names = list(images)
+            photo = st.session_state.photo_view
         if photo not in names:
             photo = names[0]
         if len(names) > 1:
@@ -540,57 +699,58 @@ with col2:
         st.caption("Preview — click 'Analyze all photos' to run the triage pipeline.")
 
 if merged:
-    st.caption(f"photos: {len(st.session_state.images)} · "
-               f"evidence markers: {len(st.session_state.markers)}")
+    with st.container(border=True):
+        st.caption(f"photos: {len(st.session_state.images)} · "
+                   f"evidence markers: {len(st.session_state.markers)}")
 
-    st.subheader("Objects detected")
-    st.dataframe(_df(merged.get("objects", []),
-                     ["class", "category", "confidence", "source", "photo"]),
-                 width="stretch", hide_index=True)
-    st.subheader("Blood-like stain candidates")
-    st.dataframe(_df(merged.get("stains", []),
-                     ["class", "confidence", "area_pct", "photo"]),
-                 width="stretch", hide_index=True)
+        st.subheader("Objects detected")
+        st.dataframe(_df(merged.get("objects", []),
+                         ["class", "category", "confidence", "source", "photo"]),
+                     width="stretch", hide_index=True)
+        st.subheader("Blood-like stain candidates")
+        st.dataframe(_df(merged.get("stains", []),
+                         ["class", "confidence", "area_pct", "photo"]),
+                     width="stretch", hide_index=True)
 
-    tamper = merged.get("tamper", {})
-    st.markdown(f"**Tamper check:** `{tamper.get('flag', 'inconclusive')}` "
-                f"(ELA score {tamper.get('ela_score', 'n/a')}) — heuristic, never a verdict")
-    notes = merged.get("processing_notes", [])
-    if notes:
-        st.info("\n".join(f"- {n}" for n in dict.fromkeys(notes)))
+        tamper = merged.get("tamper", {})
+        st.markdown(f"**Tamper check:** `{tamper.get('flag', 'inconclusive')}` "
+                    f"(ELA score {tamper.get('ela_score', 'n/a')}) — heuristic, never a verdict")
+        notes = merged.get("processing_notes", [])
+        if notes:
+            st.info("\n".join(f"- {n}" for n in dict.fromkeys(notes)))
 
-    sug = merged.get("suggestions") or {}
-    if sug:
-        source, model = sug.get("source"), sug.get("model")
-        if source == "mock":
-            mode_txt = "offline rule-based draft (no API key configured)"
-        else:
-            mode_txt = f"LLM draft ({source} / {model})"
-        st.markdown("## AI observations and suggestions (triage draft)")
-        st.caption(f"Draft by: {mode_txt} — suggestions only, never evidence; an officer signs the final case.")
-        flags = sug.get("anomaly_flags") or []
-        steps = sug.get("next_steps") or []
-        if flags:
-            st.markdown("**Anomaly flags:**\n" + "\n".join(f"- {f}" for f in flags))
-        if steps:
-            st.markdown("**Suggested next steps:**\n" + "\n".join(f"- {s}" for s in steps))
-        if sug.get("narrative"):
-            with st.expander("AI-drafted observation report"):
-                st.write(sug["narrative"])
-                if st.button("Use as narrative draft", key="use_ai_narrative"):
-                    st.session_state.narrative = sug["narrative"]
-                    st.rerun()
+        sug = merged.get("suggestions") or {}
+        if sug:
+            source, model = sug.get("source"), sug.get("model")
+            if source == "mock":
+                mode_txt = "offline rule-based draft (no API key configured)"
+            else:
+                mode_txt = f"LLM draft ({source} / {model})"
+            st.markdown("## AI observations and suggestions (triage draft)")
+            st.caption(f"Draft by: {mode_txt} — suggestions only, never evidence; an officer signs the final case.")
+            flags = sug.get("anomaly_flags") or []
+            steps = sug.get("next_steps") or []
+            if flags:
+                st.markdown("**Anomaly flags:**\n" + "\n".join(f"- {f}" for f in flags))
+            if steps:
+                st.markdown("**Suggested next steps:**\n" + "\n".join(f"- {s}" for s in steps))
+            if sug.get("narrative"):
+                with st.expander("AI-drafted observation report"):
+                    st.write(sug["narrative"])
+                    if st.button("Use as narrative draft", key="use_ai_narrative"):
+                        st.session_state.narrative = sug["narrative"]
+                        st.rerun()
 
-    st.markdown("## Officer confirmation (human-in-the-loop)")
-    st.caption(f"Marks {len(st.session_state.markers)} evidence markers")
-    narrative = st.text_area(
-        "Officer narrative (write your own account; nothing is logged until you confirm)",
-        value=st.session_state.narrative, height=140,
-        placeholder="Describe the scene, the markers and your triage decisions...",
-    )
-    st.session_state.narrative = narrative
-    if st.button("Confirm & log case", type="primary"):
-        confirm(officer_id, narrative, lat_in, lng_in)
+        st.markdown("## Officer confirmation (human-in-the-loop)")
+        st.caption(f"Marks {len(st.session_state.markers)} evidence markers")
+        narrative = st.text_area(
+            "Officer narrative (write your own account; nothing is logged until you confirm)",
+            value=st.session_state.narrative, height=140,
+            placeholder="Describe the scene, the markers and your triage decisions...",
+        )
+        st.session_state.narrative = narrative
+        if st.button("Confirm & log case", type="primary"):
+            confirm(officer_id, narrative, lat_in, lng_in)
 
 if st.session_state.last_case:
     detail = st.session_state.last_case
@@ -603,13 +763,20 @@ if st.session_state.last_case:
                        file_name=f"case-{detail['id']}.pdf", mime="application/pdf",
                        key="dl_pdf_report")
 
-st.markdown("## Past cases")
-rows = []
-for c in db.list_cases():
-    rows.append({"id": c["id"], "officer": c["officer_id"], "created_at": c["created_at"],
-                 "objects": c["object_count"], "stains": c["stain_count"],
-                 "markers": len(c.get("evidence_markers", []))})
-if rows:
-    st.dataframe(pd.DataFrame(rows), width="stretch", hide_index=True)
-else:
-    st.caption("No cases logged yet.")
+with st.container(border=True):
+    st.markdown("## Past cases")
+    rows = []
+    for c in db.list_cases():
+        rows.append({"id": c["id"], "officer": c["officer_id"], "created_at": c["created_at"],
+                     "objects": c["object_count"], "stains": c["stain_count"],
+                     "markers": len(c.get("evidence_markers", []))})
+    if rows:
+        st.dataframe(pd.DataFrame(rows), width="stretch", hide_index=True)
+    else:
+        st.caption("No cases logged yet.")
+
+st.markdown(
+    '<div class="foot">Crime Scene AI · offline-safe triage draft · '
+    "nothing is logged until an officer confirms · v0.1</div>",
+    unsafe_allow_html=True,
+)
