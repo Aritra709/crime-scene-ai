@@ -30,11 +30,11 @@ assert not at.exception
 at.get("button")[0].set_value(True).run(timeout=120)
 assert not at.exception
 assert at.session_state["merged"] is not None
-# radios: [0]=background theme, [1]=photo selector, [2]=canvas mode
-assert len(at.radio) == 3
+# radios: [0]=photo selector, [1]=canvas mode
+assert len(at.radio) == 2
 
 # canvas cache exists for the current photo and changes with markers (fingerprint)
-photo = at.radio[1].value
+photo = at.radio[0].value
 first = at.session_state["_canvas_cache"]["finger"]
 assert first
 
@@ -47,7 +47,7 @@ at.session_state["markers"] = []
 at.run()
 
 # markers mode + markers -> component renders with fixed dims
-at.radio[2].set_value("Add evidence markers").run()
+at.radio[1].set_value("Add evidence markers").run()
 at.session_state["markers"] = [{"id": 1, "photo": photo, "x": 10, "y": 10, "note": "t", "ts": "x"}]
 at.run()
 assert not at.exception
@@ -56,7 +56,7 @@ assert cache["rgb"].shape[1] <= 1100 and cache["rgb"].shape[0] > 0
 assert cache["bytes"], "JPEG bytes must be non-empty"
 
 # view mode uses cached bytes
-at.radio[2].set_value("View overlay").run()
+at.radio[1].set_value("View overlay").run()
 assert not at.exception
 assert at.session_state["_canvas_cache"]["bytes"]
 

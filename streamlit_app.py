@@ -7,7 +7,6 @@ narrative -> confirmed report logged to the case file with audit trail and
 pattern matches -> JSON/PDF report export.
 """
 
-import base64
 import json
 import os
 import sys
@@ -45,8 +44,6 @@ _DEFAULTS = {
     "measurements": [],
     "measure_seq": 0,
     "photo_view": None,
-    "bg_theme": "Aurora",
-    "bg_image_b64": "",
     "_canvas_cache": {},
 }
 CANVAS_W = 1100
@@ -278,53 +275,6 @@ html, body, [class*="css"], [data-testid="stApp"] {
   100% { opacity: 0; }
 }
 
-/* ---------- background themes ---------- */
-.bg-img {
-  position: fixed; inset: 0; z-index: -1; pointer-events: none;
-  background-size: cover; background-position: center;
-}
-.bg-img::after {
-  content: ""; position: absolute; inset: 0;
-  background: linear-gradient(180deg, rgba(7, 11, 22, 0.78), rgba(7, 11, 22, 0.55) 45%, rgba(7, 11, 22, 0.85));
-}
-.bg-fx.none * { display: none; }
-
-.bg-fx.theme-midnight .orb-a { background: radial-gradient(circle, rgba(30, 64, 175, 0.55), rgba(30, 64, 175, 0) 70%); }
-.bg-fx.theme-midnight .orb-b { background: radial-gradient(circle, rgba(37, 99, 235, 0.5), rgba(37, 99, 235, 0) 70%); }
-.bg-fx.theme-midnight .orb-c { background: radial-gradient(circle, rgba(96, 165, 250, 0.4), rgba(96, 165, 250, 0) 70%); }
-.bg-fx.theme-midnight .orb-d { background: radial-gradient(circle, rgba(2, 132, 199, 0.4), rgba(2, 132, 199, 0) 70%); }
-.bg-fx.theme-midnight .orb-e { background: conic-gradient(from 0deg, transparent, rgba(56, 189, 248, 0.5), transparent 32%, rgba(30, 64, 175, 0.4) 55%, transparent); }
-.bg-fx.theme-midnight .slide.s1 { background: radial-gradient(52% 40% at 18% 22%, rgba(37, 99, 235, 0.28), transparent 62%), radial-gradient(40% 34% at 86% 68%, rgba(14, 165, 233, 0.18), transparent 60%); }
-.bg-fx.theme-midnight .slide.s2 { background: radial-gradient(50% 42% at 82% 18%, rgba(30, 64, 175, 0.24), transparent 62%), radial-gradient(44% 38% at 12% 74%, rgba(56, 189, 248, 0.16), transparent 60%); }
-.bg-fx.theme-midnight .slide.s3 { background: radial-gradient(54% 44% at 50% 30%, rgba(2, 132, 199, 0.24), transparent 64%), radial-gradient(36% 30% at 8% 60%, rgba(37, 99, 235, 0.22), transparent 60%); }
-
-.bg-fx.theme-sunset .orb-a { background: radial-gradient(circle, rgba(249, 115, 22, 0.5), rgba(249, 115, 22, 0) 70%); }
-.bg-fx.theme-sunset .orb-b { background: radial-gradient(circle, rgba(244, 63, 94, 0.45), rgba(244, 63, 94, 0) 70%); }
-.bg-fx.theme-sunset .orb-c { background: radial-gradient(circle, rgba(251, 146, 60, 0.42), rgba(251, 146, 60, 0) 70%); }
-.bg-fx.theme-sunset .orb-d { background: radial-gradient(circle, rgba(217, 70, 239, 0.35), rgba(217, 70, 239, 0) 70%); }
-.bg-fx.theme-sunset .orb-e { background: conic-gradient(from 0deg, transparent, rgba(249, 115, 22, 0.5), transparent 32%, rgba(217, 70, 239, 0.4) 55%, transparent); }
-.bg-fx.theme-sunset .slide.s1 { background: radial-gradient(52% 40% at 18% 22%, rgba(251, 146, 60, 0.26), transparent 62%), radial-gradient(40% 34% at 86% 68%, rgba(244, 63, 94, 0.18), transparent 60%); }
-.bg-fx.theme-sunset .slide.s2 { background: radial-gradient(50% 42% at 82% 18%, rgba(217, 70, 239, 0.22), transparent 62%), radial-gradient(44% 38% at 12% 74%, rgba(249, 115, 22, 0.16), transparent 60%); }
-.bg-fx.theme-sunset .slide.s3 { background: radial-gradient(54% 44% at 50% 30%, rgba(244, 63, 94, 0.22), transparent 64%), radial-gradient(36% 30% at 8% 60%, rgba(251, 146, 60, 0.2), transparent 60%); }
-
-.bg-fx.theme-forest .orb-a { background: radial-gradient(circle, rgba(16, 185, 129, 0.45), rgba(16, 185, 129, 0) 70%); }
-.bg-fx.theme-forest .orb-b { background: radial-gradient(circle, rgba(20, 184, 166, 0.4), rgba(20, 184, 166, 0) 70%); }
-.bg-fx.theme-forest .orb-c { background: radial-gradient(circle, rgba(132, 204, 22, 0.32), rgba(132, 204, 22, 0) 70%); }
-.bg-fx.theme-forest .orb-d { background: radial-gradient(circle, rgba(5, 150, 105, 0.4), rgba(5, 150, 105, 0) 70%); }
-.bg-fx.theme-forest .orb-e { background: conic-gradient(from 0deg, transparent, rgba(20, 184, 166, 0.5), transparent 32%, rgba(16, 185, 129, 0.4) 55%, transparent); }
-.bg-fx.theme-forest .slide.s1 { background: radial-gradient(52% 40% at 18% 22%, rgba(16, 185, 129, 0.26), transparent 62%), radial-gradient(40% 34% at 86% 68%, rgba(20, 184, 166, 0.18), transparent 60%); }
-.bg-fx.theme-forest .slide.s2 { background: radial-gradient(50% 42% at 82% 18%, rgba(132, 204, 22, 0.22), transparent 62%), radial-gradient(44% 38% at 12% 74%, rgba(5, 150, 105, 0.16), transparent 60%); }
-.bg-fx.theme-forest .slide.s3 { background: radial-gradient(54% 44% at 50% 30%, rgba(20, 184, 166, 0.24), transparent 64%), radial-gradient(36% 30% at 8% 60%, rgba(16, 185, 129, 0.22), transparent 60%); }
-
-.bg-fx.theme-neon .orb-a { background: radial-gradient(circle, rgba(236, 72, 153, 0.5), rgba(236, 72, 153, 0) 70%); }
-.bg-fx.theme-neon .orb-b { background: radial-gradient(circle, rgba(34, 211, 238, 0.45), rgba(34, 211, 238, 0) 70%); }
-.bg-fx.theme-neon .orb-c { background: radial-gradient(circle, rgba(250, 204, 21, 0.35), rgba(250, 204, 21, 0) 70%); }
-.bg-fx.theme-neon .orb-d { background: radial-gradient(circle, rgba(168, 85, 247, 0.4), rgba(168, 85, 247, 0) 70%); }
-.bg-fx.theme-neon .orb-e { background: conic-gradient(from 0deg, transparent, rgba(236, 72, 153, 0.5), transparent 32%, rgba(34, 211, 238, 0.4) 55%, transparent); }
-.bg-fx.theme-neon .slide.s1 { background: radial-gradient(52% 40% at 18% 22%, rgba(236, 72, 153, 0.26), transparent 62%), radial-gradient(40% 34% at 86% 68%, rgba(34, 211, 238, 0.18), transparent 60%); }
-.bg-fx.theme-neon .slide.s2 { background: radial-gradient(50% 42% at 82% 18%, rgba(168, 85, 247, 0.22), transparent 62%), radial-gradient(44% 38% at 12% 74%, rgba(250, 204, 21, 0.16), transparent 60%); }
-.bg-fx.theme-neon .slide.s3 { background: radial-gradient(54% 44% at 50% 30%, rgba(34, 211, 238, 0.22), transparent 64%), radial-gradient(36% 30% at 8% 60%, rgba(236, 72, 153, 0.22), transparent 60%); }
-
 /* ---------- motion: title, cards, buttons ---------- */
 .hero h1 {
   background-size: 220% auto;
@@ -379,39 +329,6 @@ html, body { scroll-behavior: smooth; }
 </style>
 """
 
-_BG_ORBS = """
-  <div class="orb orb-a"></div>
-  <div class="orb orb-b"></div>
-  <div class="orb orb-c"></div>
-  <div class="orb orb-d"></div>
-  <div class="orb orb-e"></div>
-  <div class="grid"></div>
-  <div class="slide s1"></div>
-  <div class="slide s2"></div>
-  <div class="slide s3"></div>
-"""
-
-
-def _bg_fx_html():
-    """HTML for the animated background layer based on the user's theme choice."""
-    theme = str(st.session_state.get("bg_theme", "Aurora"))
-    if theme == "Custom image":
-        b64 = st.session_state.get("bg_image_b64", "")
-        if b64:
-            return (f'<div class="bg-img" style="background-image:url(data:image/jpeg;'
-                    f'base64,{b64});"></div><div class="bg-fx none"></div>')
-        return '<div class="bg-fx none"></div>'
-    if theme == "Solid dark":
-        return '<div class="bg-fx none"></div>'
-    slug = {
-        "Midnight": "midnight", "Sunset": "sunset",
-        "Forest": "forest", "Neon": "neon",
-    }.get(theme, "aurora")
-    if slug == "aurora":
-        return f'<div class="bg-fx">{_BG_ORBS}</div>'
-    return f'<div class="bg-fx theme-{slug}">{_BG_ORBS}</div>'
-
-
 _HERO = """
 <div class="hero">
   <span class="badge">EVIDENCE CAPTURE ASSISTANT</span>
@@ -423,7 +340,15 @@ _HERO = """
 """
 
 st.markdown(_CSS, unsafe_allow_html=True)
-st.markdown(_bg_fx_html(), unsafe_allow_html=True)
+st.markdown(
+    '<div class="bg-fx">'
+    '<div class="orb orb-a"></div><div class="orb orb-b"></div><div class="orb orb-c"></div>'
+    '<div class="orb orb-d"></div><div class="orb orb-e"></div>'
+    '<div class="grid"></div>'
+    '<div class="slide s1"></div><div class="slide s2"></div><div class="slide s3"></div>'
+    "</div>",
+    unsafe_allow_html=True,
+)
 st.markdown(_HERO, unsafe_allow_html=True)
 
 
@@ -852,25 +777,6 @@ with col1:
         lat_in = st.number_input("Latitude (opt.)", value=None, format="%.6f")
         lng_in = st.number_input("Longitude (opt.)", value=None, format="%.6f")
         analyze_btn = st.button("Analyze all photos", type="primary")
-
-        with st.expander("Background"):
-            st.radio(
-                "Effect",
-                ["Aurora", "Midnight", "Sunset", "Forest", "Neon", "Custom image", "Solid dark"],
-                horizontal=True, key="bg_theme",
-            )
-            if st.session_state.bg_theme == "Custom image":
-                bg_file = st.file_uploader(
-                    "Background image", type=["jpg", "jpeg", "png", "webp"],
-                    key="bg_file",
-                )
-                if bg_file is not None:
-                    data = bg_file.getvalue()
-                    if len(data) > 8 * 1024 * 1024:
-                        st.warning("Image too large — max 8 MB.")
-                    else:
-                        st.session_state.bg_image_b64 = base64.b64encode(data).decode()
-                        st.caption("Custom background applied — covers the whole app.")
 
 if analyze_btn:
     if not files:
