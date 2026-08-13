@@ -779,11 +779,12 @@ with col1:
         analyze_btn = st.button("Analyze all photos", type="primary")
 
     placed = "100%" if not bool(uploaded) else "0px"
+    slide = "0.55s ease-in-out" if bool(uploaded) else "none"
     st.markdown(f"""
     <style>
     div[data-testid="stColumn"]:has(div[data-testid="stFileUploader"]) {{
       transform: translateX({placed});
-      transition: transform 0.55s ease-in-out;
+      transition: transform {slide};
       will-change: transform;
     }}
     </style>""", unsafe_allow_html=True)
