@@ -199,10 +199,13 @@ class Detector:
         return out, ""
 
 
-_DETECTOR = Detector()
+def _get_detector() -> "Detector":
+    if not hasattr(_get_detector, "_instance"):
+        _get_detector._instance = Detector()
+    return _get_detector._instance
 
 
 def detect_objects(img_bgr) -> tuple[list, list[str]]:
-    dets, note = _DETECTOR.detect(img_bgr)
+    dets, note = _get_detector().detect(img_bgr)
     notes = [note] if note else []
     return dets, notes

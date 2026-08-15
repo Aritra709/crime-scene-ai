@@ -39,6 +39,10 @@ CREATE TABLE IF NOT EXISTS case_log (
     action TEXT,
     detail TEXT
 );
+CREATE INDEX IF NOT EXISTS idx_cases_officer ON cases(officer_id);
+CREATE INDEX IF NOT EXISTS idx_cases_created ON cases(created_at);
+CREATE INDEX IF NOT EXISTS idx_cases_gps ON cases(gps_lat, gps_lng);
+CREATE INDEX IF NOT EXISTS idx_log_case ON case_log(case_id);
 """
 
 _MIGRATIONS = (

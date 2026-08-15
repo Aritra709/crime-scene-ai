@@ -53,6 +53,7 @@ def _mock_reason(analysis: dict) -> dict:
         texts = ", ".join(f'"{o["text"]}"' for o in ocr_items[:3])
         narr_parts.append(f"Visible text region(s): {texts}.")
         narr_hi.append(f"दिखाई देने वाला पाठ: {texts}।")
+        steps.append("Verify visible text/plate content against records; photograph text at higher resolution")
     if not narr_parts:
         narr_parts.append("No objects, stain candidates or text detected above thresholds; scene appears unremarkable at triage level.")
         narr_hi.append("सीमा स्तर से ऊपर कोई वस्तु, दाग या पाठ नहीं मिला; प्रारंभिक परीक्षण में दृश्य सामान्य प्रतीत होता है।")
@@ -72,8 +73,6 @@ def _mock_reason(analysis: dict) -> dict:
             steps.append("Tag and bag each weapon-class object for fingerprint/DNA processing by the forensic team")
         if stains:
             steps.append("Collect swab samples of the stain candidate for serology — do not rely on colour alone")
-    if ocr_items:
-        steps.append("Verify visible text/plate content against records; photograph text at higher resolution")
     if vehicles:
         steps.append("Identify vehicle registration and check against stolen-vehicle records")
     steps.append("Record officer name, ID, GPS and timestamp in the case file (chain of custody)")

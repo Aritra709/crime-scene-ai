@@ -10,7 +10,9 @@ import numpy as np
 from PIL import Image
 from PIL.ExifTags import GPSTAGS, TAGS
 
-ELA_THRESHOLD = 3.5  # mean abs diff per channel after re-encode @ q90; tune on real dataset
+from .. import config
+
+ELA_THRESHOLD = config.ELA_THRESHOLD
 
 _GPSTAG_NAMES = {v: k for k, v in GPSTAGS.items()}
 

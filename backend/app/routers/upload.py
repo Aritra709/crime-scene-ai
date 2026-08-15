@@ -8,6 +8,8 @@ from fastapi.responses import JSONResponse
 
 from .. import config
 from ..pipeline import run_pipeline
+from .. import reasoning
+from ..vision import detector, ocr
 
 router = APIRouter(prefix="/api", tags=["upload"])
 
@@ -23,6 +25,15 @@ async def upload_photo(
     if not raw:
         raise HTTPException(400, "empty image upload")
 
+    # Validate file size
+    if len(raw) > config.MAX_UPLOAD_MB * 1024 * 1024:
+        raise HTTPException(413, f"file too large (max {config.MAX_UPLOAD_MB} MB)")
+
+    # Validate MIME type
+    allowed_types = {"image/jpeg", "image/png", "image/webp", "image/bmp"}
+    if image.content_type not in allowed_types:
+        raise HTTPException(400, f"unsupported file type: {image.content_type}")
+
     image_id = uuid.uuid4().hex[:12]
     image_path = config.IMAGES_DIR / f"{image_id}.jpg"
 
@@ -30,6 +41,9 @@ async def upload_photo(
         analysis = run_pipeline(raw)
     except ValueError as exc:
         raise HTTPException(400, str(exc)) from exc
+
+    # Run reasoning layer
+    llm_result = reasoning.reason(analysis)
 
     img_bgr = cv2.imdecode(np.frombuffer(raw, np.uint8), cv2.IMREAD_COLOR)
     cv2.imwrite(str(image_path), img_bgr, [cv2.IMWRITE_JPEG_QUALITY, 92])
@@ -47,6 +61,7 @@ async def upload_photo(
         "officer_id": officer_id,
         "gps": gps,
         "captured_at": captured_at,
+        "llm": llm_result,
     })
     analysis["metadata"] = {
         **analysis["metadata"],
@@ -59,4 +74,13 @@ async def upload_photo(
 
 @router.get("/health")
 async def health():
-    return {"status": "ok"}
+    det = detector._get_detector()
+    ocr_engine = ocr._ENGINE
+
+    return {
+        "status": "ok",
+        "yolo": "available" if det.available else f"unavailable: {det.reason}",
+        "ocr": "available" if ocr_engine.available else f"unavailable: {ocr_engine.reason}",
+        "llm": "openai" if config.OPENAI_API_KEY else "mock",
+        "max_upload_mb": config.MAX_UPLOAD_MB,
+    }

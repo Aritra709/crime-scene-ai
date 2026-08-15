@@ -44,6 +44,11 @@ class CasePayload(BaseModel):
     metadata: dict = {}
     llm_source: str = ""
     processing_notes: list[str] = []
+    evidence_markers: list[dict] = []
+    scale: dict | None = None
+    photos: list[dict] = []
+    ai_report: dict = {}
+    measurements: list[dict] = []
 
 
 @router.post("/cases")

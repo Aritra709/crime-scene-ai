@@ -15,3 +15,9 @@ OCR_SPACE_API_KEY = os.environ.get("OCR_SPACE_API_KEY", "")
 
 YOLO_MODEL_NAME = os.environ.get("YOLO_MODEL_NAME", "yolov8n.pt")
 YOLO_CONF = float(os.environ.get("YOLO_CONF", "0.35"))
+
+STAIN_MIN_AREA_PCT = float(os.environ.get("STAIN_MIN_AREA_PCT", "0.02"))
+STAIN_MAX_AREA_PCT = float(os.environ.get("STAIN_MAX_AREA_PCT", "60.0"))
+ELA_THRESHOLD = float(os.environ.get("ELA_THRESHOLD", "3.5"))
+
+MAX_UPLOAD_MB = int(os.environ.get("MAX_UPLOAD_MB", "10"))

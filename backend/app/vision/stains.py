@@ -13,8 +13,10 @@ Output per blob:
 import cv2
 import numpy as np
 
-MIN_AREA_PCT = 0.02          # ignore specks smaller than 0.02% of the frame
-MAX_AREA_PCT = 60.0          # ignore red wall/carpet floods
+from .. import config
+
+MIN_AREA_PCT = config.STAIN_MIN_AREA_PCT
+MAX_AREA_PCT = config.STAIN_MAX_AREA_PCT
 
 
 def detect_blood_like_stains(img_bgr) -> list[dict]:

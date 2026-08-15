@@ -18,26 +18,36 @@ OUT = Path(__file__).parent / "sample_scene.jpg"
 
 def add_exif(path: Path, lat: float, lng: float, when: str):
     """Minimal EXIF injection: DateTimeOriginal + GPS (2-byte rationals)."""
-    from PIL import Image
-    from PIL.ExifTags import Base as ExifBase
-    from PIL.TiffImagePlugin import IFDRational
+    # Use piexif if available, otherwise skip EXIF injection for demo
+    try:
+        import piexif
+        from PIL import Image
 
-    img = Image.open(path)
-    exif = img.getexif()
+        img = Image.open(path)
 
-    exif[ExifBase.DateTimeOriginal] = when
+        def dms(value):
+            deg = int(value)
+            minute = int((value - deg) * 60)
+            sec = ((value - deg) * 60 - minute) * 60
+            return ((deg, 1), (minute, 1), (int(sec * 1000), 1000))
 
-    def dms(value):
-        deg = int(value)
-        minute = int((value - deg) * 60)
-        sec = ((value - deg) * 60 - minute) * 60
-        return (IFDRational(deg), IFDRational(minute), IFDRational(round(sec * 1000), 1000))
+        gps_ifd = {
+            piexif.GPSIFD.GPSLatitudeRef: "N",
+            piexif.GPSIFD.GPSLatitude: dms(abs(lat)),
+            piexif.GPSIFD.GPSLongitudeRef: "E",
+            piexif.GPSIFD.GPSLongitude: dms(abs(lng)),
+        }
 
-    gps_ifd = {1: "N", 2: dms(abs(lat)), 3: "E", 4: dms(abs(lng))}
-    exif.get_ifd(0x8825).update(gps_ifd)
+        exif_dict = {
+            "0th": {piexif.ImageIFD.DateTime: when},
+            "GPS": gps_ifd,
+        }
+        exif_bytes = piexif.dump(exif_dict)
 
-    img.save(path, exif=exif)
-    print(f"EXIF injected: GPS {lat},{lng} @ {when}")
+        img.save(path, exif=exif_bytes)
+        print(f"EXIF injected: GPS {lat},{lng} @ {when}")
+    except ImportError:
+        print("piexif not installed; skipping EXIF injection (demo still works)")
 
 
 def main():
