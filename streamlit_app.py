@@ -907,9 +907,11 @@ def _analyze_video(raw, filename=""):
 
     notes = []
     all_dets = []
-    for frame in frames:
+    for i, frame in enumerate(frames):
         dets, det_notes = vision_detector.detect_objects(frame)
         notes.extend(det_notes)
+        for det in dets:
+            det["frame_idx"] = frame_nums[i]
         all_dets.append(dets)
 
     tracked = video_mod.track_persons_across_frames(all_dets)
