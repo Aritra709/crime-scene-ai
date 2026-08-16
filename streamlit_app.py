@@ -893,40 +893,38 @@ def _analyze_video(raw, filename=""):
     try:
         tmp.write(raw)
         tmp.close()
-        frames, frame_nums, note = video_mod.extract_frames(tmp.name)
+        tracked_dets, notes = video_mod.process_video(tmp.name)
     except Exception as exc:
+        try: os.unlink(tmp.name)
+        except OSError: pass
         return None, [f"video-unavailable: {exc}"]
-    finally:
-        try:
-            os.unlink(tmp.name)
-        except OSError:
-            pass
 
-    if not frames:
-        return None, [note or "video-unavailable: no frames extracted"]
+    if not tracked_dets:
+        try: os.unlink(tmp.name)
+        except OSError: pass
+        return None, notes or ["video-unavailable: no detections"]
 
-    notes = []
-    all_dets = []
-    for i, frame in enumerate(frames):
-        dets, det_notes = vision_detector.detect_objects(frame)
-        notes.extend(det_notes)
-        for det in dets:
-            det["frame_idx"] = frame_nums[i]
-        all_dets.append(dets)
-
-    tracked = video_mod.track_persons_across_frames(all_dets)
+    # Group detections by frame
     by_frame = {}
-    for d in tracked:
+    for d in tracked_dets:
         by_frame.setdefault(d.get("frame_idx", 0), []).append(d)
+
+    # Re-extract frames for annotation
+    frames, frame_nums, note = video_mod.extract_frames(tmp.name)
+    if note:
+        notes = [note] + (notes or [])
 
     annotated = {}
     for fi, frame in zip(frame_nums, frames):
         annotated[fi] = annotate(frame, {"objects": by_frame.get(fi, []), "stains": []})
 
+    try: os.unlink(tmp.name)
+    except OSError: pass
+
     return {
         "frame_nums": frame_nums,
         "annotated": annotated,
-        "detections": tracked,
+        "detections": tracked_dets,
         "notes": notes,
     }, None
 
