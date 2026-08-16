@@ -28,6 +28,8 @@ from st_canvas import streamlit_image_coordinates
 
 from app import config, db, reasoning
 from app.pipeline import run_pipeline
+from app.vision import detector as vision_detector
+from app.vision import video as video_mod
 
 db.init_db()
 
@@ -44,6 +46,7 @@ _DEFAULTS = {
     "measurements": [],
     "measure_seq": 0,
     "photo_view": None,
+    "video_analysis": None,
     "_canvas_cache": {},
 }
 CANVAS_W = 1100
@@ -877,6 +880,87 @@ def analyze_all(files, officer_id, lat, lng):
     return True
 
 
+def _analyze_video(raw, filename=""):
+    """Extract frames, detect objects, track persons (person1, person2, ...).
+
+    Returns (video_analysis_dict, error_list). Frames are annotated in place
+    with person ids so the same person keeps one name across the video.
+    """
+    import tempfile
+
+    suffix = os.path.splitext(filename or ".mp4")[1].lower() or ".mp4"
+    tmp = tempfile.NamedTemporaryFile(suffix=suffix, delete=False)
+    try:
+        tmp.write(raw)
+        tmp.close()
+        frames, frame_nums, note = video_mod.extract_frames(tmp.name)
+    except Exception as exc:
+        return None, [f"video-unavailable: {exc}"]
+    finally:
+        try:
+            os.unlink(tmp.name)
+        except OSError:
+            pass
+
+    if not frames:
+        return None, [note or "video-unavailable: no frames extracted"]
+
+    notes = []
+    all_dets = []
+    for frame in frames:
+        dets, det_notes = vision_detector.detect_objects(frame)
+        notes.extend(det_notes)
+        all_dets.append(dets)
+
+    tracked = video_mod.track_persons_across_frames(all_dets)
+    by_frame = {}
+    for d in tracked:
+        by_frame.setdefault(d.get("frame_idx", 0), []).append(d)
+
+    annotated = {}
+    for fi, frame in zip(frame_nums, frames):
+        annotated[fi] = annotate(frame, {"objects": by_frame.get(fi, []), "stains": []})
+
+    return {
+        "frame_nums": frame_nums,
+        "annotated": annotated,
+        "detections": tracked,
+        "notes": notes,
+    }, None
+
+
+def _merge_video_into_case():
+    """Merge tracked video detections into the scene analysis."""
+    va = st.session_state.video_analysis
+    if not va:
+        return
+    merged = st.session_state.merged
+    if merged is None:
+        merged = {
+            "width": 0, "height": 0, "objects": [], "stains": [],
+            "tamper": {}, "metadata": {}, "gps": None,
+            "captured_at": datetime.now(timezone.utc).isoformat(),
+            "processing_notes": [],
+        }
+    dets = []
+    for d in va["detections"]:
+        nd = dict(d)
+        nd["source"] = "yolo-video"
+        nd.setdefault("frame_idx", 0)
+        nd["photo"] = f"video frame {nd['frame_idx']}"
+        dets.append(nd)
+    merged["objects"] = list(merged.get("objects", [])) + dets
+    merged["processing_notes"] = list(merged.get("processing_notes", [])) + va["notes"]
+    merged["processing_notes"].append(
+        f"video analysis merged — {len(dets)} detections from {len(va['frame_nums'])} frames"
+    )
+    merged["suggestions"] = reasoning.reason(merged)
+    st.session_state.merged = merged
+    st.session_state.narrative = merged["suggestions"].get("narrative", "")
+    if merged["metadata"] is None:
+        merged["metadata"] = {}
+
+
 def confirm(officer_id, narrative, lat, lng):
     merged = st.session_state.merged
     if not merged:
@@ -1166,7 +1250,7 @@ if analyze_btn:
 with col2:
     merged = st.session_state.merged
     images = st.session_state.images
-    if merged:
+    if merged and images:
         with st.container(border=True):
             names = list(images)
             photo = st.session_state.photo_view
@@ -1223,20 +1307,77 @@ with col2:
         st.image(files[0][1], width="stretch")
         st.caption("Preview — click 'Analyze all photos' to run the triage pipeline.")
 
-if merged:
-        with st.container(border=True):
-            st.markdown('<div class="section-header"><div class="section-header-icon">📷</div><div class="section-header-title">Scene Overview</div></div>', unsafe_allow_html=True)
-            st.caption(f"photos: {len(st.session_state.images)} · "
-                       f"evidence markers: {len(st.session_state.markers)}")
+st.markdown('<div class="section-header"><div class="section-header-icon">🎬</div><div class="section-header-title">Video Detection</div></div>', unsafe_allow_html=True)
+with st.container(border=True):
+    st.caption("Upload a scene video (MP4/WebM/AVI). Frames are sampled, objects detected, and each person is tracked across frames as person1, person2, … — the same person keeps one name.")
+    vfile = st.file_uploader(
+        "Scene video", type=["mp4", "webm", "avi", "mov"],
+        on_change=lambda: st.session_state.update(video_analysis=None),
+    )
+    if vfile:
+        st.video(vfile)
+        if st.button("Analyze video", type="primary", key="analyze_video_btn"):
+            va, verr = _analyze_video(vfile.getvalue(), vfile.name)
+            if va is None:
+                st.error("; ".join(verr or ["video analysis failed"]))
+            else:
+                st.session_state.video_analysis = va
+                st.success(
+                    f"Analyzed {len(va['frame_nums'])} frames — {len(va['detections'])} detections, "
+                    f"{len({d.get('person_id') for d in va['detections'] if d.get('person_id')})} persons tracked."
+                )
 
-            st.markdown('<div class="section-header"><div class="section-header-icon">🔍</div><div class="section-header-title">Objects Detected</div></div>', unsafe_allow_html=True)
-            st.dataframe(_df(merged.get("objects", []),
-                             ["class", "category", "confidence", "source", "photo"]),
-                        width="stretch", hide_index=True)
-            st.markdown('<div class="section-header"><div class="section-header-icon">🩸</div><div class="section-header-title">Blood-like Stain Candidates</div></div>', unsafe_allow_html=True)
-            st.dataframe(_df(merged.get("stains", []),
-                             ["class", "confidence", "area_pct", "photo"]),
-                        width="stretch", hide_index=True)
+    va = st.session_state.video_analysis
+    if va:
+        frames = va["frame_nums"]
+        persons = sorted(
+            {d.get("person_id") for d in va["detections"] if d.get("person_id")},
+            key=lambda s: (len(s), s),
+        )
+        if persons:
+            st.markdown("**Persons tracked:** " + " · ".join(f"`{p}`" for p in persons))
+        if len(frames) > 1:
+            idx = st.slider("Frame", 0, len(frames) - 1, 0, key="video_frame_slider")
+        else:
+            st.caption("Single frame extracted.")
+            idx = 0
+        fi = frames[idx]
+        st.image(va["annotated"][fi], width="stretch")
+        frame_dets = [d for d in va["detections"] if d.get("frame_idx") == fi]
+        if frame_dets:
+            st.dataframe(
+                _df(frame_dets, ["class", "category", "confidence", "source", "person_id", "frame_idx"]),
+                width="stretch", hide_index=True,
+            )
+        else:
+            st.caption("No detections at this frame.")
+        st.caption(f"Detections across all frames: {len(va['detections'])}")
+        with st.expander("All video detections"):
+            st.dataframe(
+                _df(va["detections"], ["class", "category", "confidence", "person_id", "frame_idx"]),
+                width="stretch", hide_index=True,
+            )
+        if va["notes"]:
+            st.info("\n".join(f"- {n}" for n in dict.fromkeys(va["notes"])))
+        if st.button("Add video detections to case", key="merge_video_btn"):
+            _merge_video_into_case()
+            st.success("Video detections merged into the scene analysis — review below and confirm the case.")
+            st.rerun()
+
+if merged:
+    with st.container(border=True):
+        st.markdown('<div class="section-header"><div class="section-header-icon">📷</div><div class="section-header-title">Scene Overview</div></div>', unsafe_allow_html=True)
+        st.caption(f"photos: {len(st.session_state.images)} · "
+                   f"evidence markers: {len(st.session_state.markers)}")
+
+        st.markdown('<div class="section-header"><div class="section-header-icon">🔍</div><div class="section-header-title">Objects Detected</div></div>', unsafe_allow_html=True)
+        st.dataframe(_df(merged.get("objects", []),
+                         ["class", "category", "confidence", "source", "photo"]),
+                    width="stretch", hide_index=True)
+        st.markdown('<div class="section-header"><div class="section-header-icon">🩸</div><div class="section-header-title">Blood-like Stain Candidates</div></div>', unsafe_allow_html=True)
+        st.dataframe(_df(merged.get("stains", []),
+                         ["class", "confidence", "area_pct", "photo"]),
+                    width="stretch", hide_index=True)
 
         tamper = merged.get("tamper", {})
         st.markdown(f'<div class="section-header"><div class="section-header-icon">🔒</div><div class="section-header-title">Tamper Check</div></div>', unsafe_allow_html=True)

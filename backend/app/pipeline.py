@@ -10,7 +10,7 @@ degradation). The app never uploads photos off-device.
 import cv2
 import numpy as np
 
-from .vision import detector, stains, tamper, ocr
+from .vision import detector, stains, tamper, ocr, video
 
 
 def run_pipeline(raw: bytes) -> dict:
@@ -20,6 +20,7 @@ def run_pipeline(raw: bytes) -> dict:
         raise ValueError("image could not be decoded")
 
     objects, det_notes = detector.detect_objects(img_bgr)
+    video.label_persons(objects)
     notes.extend(det_notes)
 
     stain_list = stains.detect_blood_like_stains(img_bgr)

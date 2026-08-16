@@ -58,6 +58,21 @@ def compute_iou(box1: Dict[str, float], box2: Dict[str, float]) -> float:
     return inter / union if union > 0 else 0.0
 
 
+def label_persons(dets: List[Dict]) -> List[Dict]:
+    """Label person detections in a single photo as person1, person2, ...
+
+    Sorted by position (left-to-right, top-to-bottom) so numbering is
+    consistent. Mutates detections in place and returns the list.
+    """
+    persons = [d for d in dets if d.get("category") == "person"]
+    persons.sort(key=lambda d: (d["bbox"]["x1"], d["bbox"]["y1"]))
+    for i, d in enumerate(persons, 1):
+        label = f"person{i}"
+        d["person_id"] = label
+        d["class"] = label
+    return dets
+
+
 def track_persons_across_frames(all_detections: List[List[Dict]], iou_threshold: float = 0.3) -> List[Dict]:
     """Track persons across frames using simple IoU matching.
     Returns detections with person_id assigned (person1, person2, etc.)."""
