@@ -23,6 +23,26 @@ export async function uploadImage(
   return j<Analysis>(await fetch("/api/upload", { method: "POST", body: fd }));
 }
 
+export interface VideoAnalysis extends Analysis {
+  video_id: string;
+  video_url: string;
+}
+
+export async function uploadVideo(
+  file: File,
+  officerId: string,
+  gps: { lat: number; lng: number } | null,
+): Promise<VideoAnalysis> {
+  const fd = new FormData();
+  fd.append("video", file);
+  fd.append("officer_id", officerId);
+  if (gps) {
+    fd.append("lat", String(gps.lat));
+    fd.append("lng", String(gps.lng));
+  }
+  return j<VideoAnalysis>(await fetch("/api/upload-video", { method: "POST", body: fd }));
+}
+
 export async function createCase(payload: CasePayload): Promise<CaseDetail> {
   return j<CaseDetail>(
     await fetch("/api/cases", {

@@ -21,3 +21,8 @@ STAIN_MAX_AREA_PCT = float(os.environ.get("STAIN_MAX_AREA_PCT", "60.0"))
 ELA_THRESHOLD = float(os.environ.get("ELA_THRESHOLD", "3.5"))
 
 MAX_UPLOAD_MB = int(os.environ.get("MAX_UPLOAD_MB", "10"))
+MAX_VIDEO_MB = int(os.environ.get("MAX_VIDEO_MB", "50"))
+VIDEO_FRAME_INTERVAL = int(os.environ.get("VIDEO_FRAME_INTERVAL", "30"))
+VIDEO_MAX_FRAMES = int(os.environ.get("VIDEO_MAX_FRAMES", "100"))
+VIDEOS_DIR = DATA_DIR / "videos"
+VIDEOS_DIR.mkdir(parents=True, exist_ok=True)

@@ -1,5 +1,5 @@
 import { useState } from "react";
-import type { Analysis } from "./types";
+import type { Analysis, VideoAnalysis } from "./types";
 import UploadView from "./components/UploadView";
 import ReportEditor from "./components/ReportEditor";
 import CaseList from "./components/CaseList";
@@ -8,7 +8,7 @@ type View = "upload" | "report" | "cases";
 
 export default function App() {
   const [view, setView] = useState<View>("upload");
-  const [analysis, setAnalysis] = useState<Analysis | null>(null);
+  const [analysis, setAnalysis] = useState<Analysis | VideoAnalysis | null>(null);
 
   return (
     <div className="app">

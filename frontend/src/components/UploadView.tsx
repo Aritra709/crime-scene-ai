@@ -1,10 +1,12 @@
 import { useRef, useState } from "react";
 import type { Analysis } from "../types";
-import { uploadImage } from "../api";
+import { uploadImage, uploadVideo, type VideoAnalysis } from "../api";
 
 interface Props {
-  onAnalyzed: (analysis: Analysis) => void;
+  onAnalyzed: (analysis: Analysis | VideoAnalysis) => void;
 }
+
+type MediaType = "image" | "video";
 
 export default function UploadView({ onAnalyzed }: Props) {
   const fileRef = useRef<HTMLInputElement>(null);
@@ -14,6 +16,7 @@ export default function UploadView({ onAnalyzed }: Props) {
   const [previewUrl, setPreviewUrl] = useState<string | null>(null);
   const [busy, setBusy] = useState(false);
   const [error, setError] = useState("");
+  const [mediaType, setMediaType] = useState<MediaType>("image");
 
   const pickGps = () => {
     if (!navigator.geolocation) {
@@ -34,19 +37,22 @@ export default function UploadView({ onAnalyzed }: Props) {
     if (!f) return;
     setPreviewUrl(URL.createObjectURL(f));
     setError("");
+    setMediaType(f.type.startsWith("video/") ? "video" : "image");
   };
 
   const submit = async () => {
     const file = fileRef.current?.files?.[0];
     if (!file) {
-      setError("Choose a photo first");
+      setError(mediaType === "video" ? "Choose a video first" : "Choose a photo first");
       return;
     }
     setBusy(true);
     setError("");
     localStorage.setItem("officer_id", officerId);
     try {
-      const analysis = await uploadImage(file, officerId, gps);
+      const analysis = mediaType === "video"
+        ? await uploadVideo(file, officerId, gps)
+        : await uploadImage(file, officerId, gps);
       onAnalyzed(analysis);
     } catch (e) {
       setError(e instanceof Error ? e.message : String(e));
@@ -55,11 +61,14 @@ export default function UploadView({ onAnalyzed }: Props) {
     }
   };
 
+  const acceptType = mediaType === "video" ? "video/*" : "image/*";
+  const dropHint = mediaType === "video" ? "Tap to choose a video (MP4/WebM)" : "Tap to choose a photo (JPEG/PNG)";
+
   return (
     <div className="card upload-card">
-      <h2>New scene photo</h2>
+      <h2>New scene {mediaType === "video" ? "video" : "photo"}</h2>
       <p className="hint">
-        Upload a scene photo. GPS + timestamp are auto-attached from device / EXIF. The AI
+        Upload a scene {mediaType === "video" ? "video" : "photo"}. GPS + timestamp are auto-attached from device / EXIF. The AI
         draft goes to an officer review screen — nothing is logged without your confirmation.
       </p>
 
@@ -80,25 +89,52 @@ export default function UploadView({ onAnalyzed }: Props) {
         {gpsNote && <em className="hint">{gpsNote}</em>}
       </div>
 
+      <div className="media-type-toggle">
+        <label>
+          <input
+            type="radio"
+            name="mediaType"
+            value="image"
+            checked={mediaType === "image"}
+            onChange={() => setMediaType("image")}
+          />
+          Photo
+        </label>
+        <label>
+          <input
+            type="radio"
+            name="mediaType"
+            value="video"
+            checked={mediaType === "video"}
+            onChange={() => setMediaType("video")}
+          />
+          Video
+        </label>
+      </div>
+
       <label className="dropzone" onDragOver={(e) => e.preventDefault()}>
         <input
           ref={fileRef}
           type="file"
-          accept="image/*"
+          accept={acceptType}
           onChange={(e) => onFile(e.target.files?.[0])}
           hidden
         />
         {previewUrl ? (
-          <img src={previewUrl} alt="selected" className="preview" />
+          mediaType === "video" ? (
+            <video src={previewUrl} className="preview" controls />
+          ) : (
+            <img src={previewUrl} alt="selected" className="preview" />
+          )
         ) : (
-          <div className="drop-hint">Tap to choose a photo (JPEG/PNG)</div>
+          <div className="drop-hint">{dropHint}</div>
         )}
       </label>
 
       {error && <div className="error">{error}</div>}
 
       <button type="button" className="btn primary" disabled={busy} onClick={submit}>
-        {busy ? "Analyzing…" : "Run scene analysis"}
+        {busy ? "Analyzing…" : `Run scene ${mediaType === "video" ? "video" : "photo"} analysis`}
       </button>
       <p className="hint">
         Runs fully offline: object/stain heuristics + offline reasoning draft. Set

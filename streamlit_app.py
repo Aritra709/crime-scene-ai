@@ -53,333 +53,662 @@ for _k, _v in _DEFAULTS.items():
 
 _CSS = """
 <style>
-@import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap');
+@import url('https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&display=swap');
+@import url('https://fonts.googleapis.com/css2?family=JetBrains+Mono:wght@400;500&display=swap');
 
+/* Root variables for theme */
+:root {
+    --primary: #6366f1;
+    --primary-light: #818cf8;
+    --primary-dark: #4f46e5;
+    --secondary: #06b6d4;
+    --secondary-light: #67e8f9;
+    --secondary-dark: #0891b2;
+    --accent: #f59e0b;
+    --accent-light: #fbbf24;
+    --accent-dark: #d97706;
+    --success: #10b981;
+    --warning: #f59e0b;
+    --error: #ef4444;
+    --dark-bg: #020617;
+    --darker-bg: #010409;
+    --card-bg: rgba(15, 23, 42, 0.6);
+    --card-bg-light: rgba(15, 23, 42, 0.4);
+    --border: rgba(148, 163, 184, 0.2);
+    --border-light: rgba(148, 163, 184, 0.1);
+    --text-primary: #e2e8f0;
+    --text-secondary: #cbd5e1;
+    --text-muted: #94a3b8;
+    --shadow-sm: 0 1px 3px rgba(0, 0, 0, 0.12), 0 1px 2px rgba(0, 0, 0, 0.24);
+    --shadow-md: 0 4px 6px -1px rgba(0, 0, 0, 0.1), 0 2px 4px -1px rgba(0, 0, 0, 0.06);
+    --shadow-lg: 0 10px 15px -3px rgba(0, 0, 0, 0.1), 0 4px 6px -2px rgba(0, 0, 0, 0.05);
+    --radius-sm: 6px;
+    --radius-md: 8px;
+    --radius-lg: 12px;
+    --transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+}
+
+/* Global styles */
 html, body, [class*="css"], [data-testid="stApp"] {
-  font-family: 'Inter', 'Segoe UI', system-ui, -apple-system, sans-serif;
+    font-family: 'Inter', sans-serif;
+    background-color: var(--dark-bg);
+    color: var(--text-primary);
 }
 
+/* Main app container */
 [data-testid="stAppViewContainer"] {
-  background:
-    radial-gradient(1100px 520px at 12% -12%, rgba(99, 102, 241, 0.16), transparent 60%),
-    radial-gradient(900px 480px at 108% 4%, rgba(34, 211, 238, 0.10), transparent 55%),
-    linear-gradient(180deg, #0b1020 0%, #070b16 100%);
+    background: 
+        radial-gradient(1200px 600px at 20% -10%, rgba(99, 102, 241, 0.15), transparent 50%),
+        radial-gradient(1000px 500px at 80% 0%, rgba(6, 182, 212, 0.1), transparent 50%),
+        linear-gradient(180deg, #020617 0%, #010409 100%);
+    position: relative;
+    overflow-x: hidden;
 }
 
-[data-testid="stHeader"] { background: rgba(7, 11, 22, 0.55); backdrop-filter: blur(8px); }
+/* Hide Streamlit branding */
+#MainMenu {visibility: hidden;}
+footer {visibility: hidden;}
+header {visibility: hidden;}
 
-[data-testid="stMainBlockContainer"], [data-testid="stBlockContainer"], .block-container {
-  padding-top: 2.2rem; max-width: 1240px;
+/* Custom scrollbar */
+::-webkit-scrollbar {
+    width: 8px;
+    height: 8px;
 }
-
-.hero { margin-bottom: 0.2rem; }
-.hero .badge {
-  display: inline-block; font-size: 0.72rem; font-weight: 700; letter-spacing: 0.18em;
-  color: #a5b4fc; border: 1px solid rgba(129, 140, 248, 0.45); border-radius: 999px;
-  padding: 0.28rem 0.9rem; background: rgba(99, 102, 241, 0.12);
+::-webkit-scrollbar-track {
+    background: rgba(15, 23, 42, 0.3);
 }
-.hero h1 {
-  margin: 0.7rem 0 0.35rem; font-size: 2.3rem; font-weight: 800; letter-spacing: -0.03em;
-  background: linear-gradient(92deg, #a5b4fc 0%, #67e8f9 60%, #6ee7b7 100%);
-  -webkit-background-clip: text; background-clip: text; color: transparent;
+::-webkit-scrollbar-thumb {
+    background: rgba(99, 102, 241, 0.4);
+    border-radius: 4px;
 }
-.hero p.sub { color: #94a3b8; font-size: 0.98rem; line-height: 1.6; max-width: 760px; margin: 0; }
-.hero p.sub b { color: #e2e8f0; font-weight: 600; }
-.hero hr.divider {
-  margin: 1.3rem 0 0; border: 0; height: 1px;
-  background: linear-gradient(90deg, rgba(129,140,248,.55), rgba(103,232,249,.35), transparent);
+::-webkit-scrollbar-thumb:hover {
+    background: rgba(99, 102, 241, 0.6);
 }
 
-[data-testid="stHeading"] h1, [data-testid="stHeading"] h2, [data-testid="stHeading"] h3 {
-  letter-spacing: -0.01em;
+/* Hero section */
+.hero {
+    position: relative;
+    text-align: center;
+    padding: 4rem 2rem;
+    margin-bottom: 2rem;
+    overflow: hidden;
 }
-[data-testid="stSubheader"], [data-testid="stHeading"] h3 {
-  font-size: 0.9rem !important; font-weight: 700 !important; letter-spacing: 0.1em;
-  text-transform: uppercase; color: #93c5fd !important;
+.hero::before {
+    content: '';
+    position: absolute;
+    top: 0;
+    left: 0;
+    right: 0;
+    bottom: 0;
+    background: 
+        radial-gradient(circle at 30% 30%, rgba(99, 102, 241, 0.1) 0%, transparent 50%),
+        radial-gradient(circle at 70% 70%, rgba(6, 182, 212, 0.1) 0%, transparent 50%);
+    pointer-events: none;
 }
-
-[data-testid="stMetric"] {
-  background: linear-gradient(165deg, rgba(148,163,184,0.10), rgba(148,163,184,0.02));
-  border: 1px solid rgba(148,163,184,0.22); border-radius: 14px;
-  padding: 0.7rem 1rem 0.85rem;
-}
-[data-testid="stMetric"] label {
-  color: #94a3b8; font-size: 0.76rem; letter-spacing: 0.05em; text-transform: uppercase;
-}
-[data-testid="stMetricValue"] { font-size: 1.5rem; font-weight: 800; color: #f1f5f9; }
-
-[data-testid="stVerticalBlockBorderWrapper"] {
-  background: rgba(148, 163, 184, 0.045);
-  border: 1px solid rgba(148, 163, 184, 0.16);
-  border-radius: 16px;
-  padding: 1rem 1.1rem !important;
-}
-
-[data-testid="stBaseButton-secondary"], .stButton > button, .stDownloadButton button {
-  border-radius: 10px; font-weight: 600; padding: 0.42rem 1.05rem; min-height: 2.4rem;
-  border: 1px solid rgba(148, 163, 184, 0.28); background: rgba(148, 163, 184, 0.08);
-  color: #e2e8f0; transition: all 0.15s ease;
-}
-[data-testid="stBaseButton-secondary"]:hover, .stButton > button:hover {
-  border-color: rgba(129, 140, 248, 0.7); background: rgba(129, 140, 248, 0.14); color: #fff;
-}
-[data-testid="stBaseButton-primary"], .stButton > button[kind="primary"] {
-  background: linear-gradient(92deg, #6366f1 0%, #06b6d4 100%); border: none; color: #fff;
-  box-shadow: 0 10px 26px -10px rgba(99, 102, 241, 0.55);
-}
-[data-testid="stBaseButton-primary"]:hover, .stButton > button[kind="primary"]:hover {
-  background: linear-gradient(92deg, #545ef0 0%, #0891b2 100%);
-  box-shadow: 0 14px 30px -10px rgba(99, 102, 241, 0.7);
-}
-
-[data-testid="stTextInput"] input, [data-testid="stNumberInput"] input,
-[data-testid="stTextArea"] textarea,
-[data-testid="stBaseInput-stTextInput"] input, [data-testid="stBaseInput-stNumberInput"] input {
-  background: rgba(15, 23, 42, 0.75); border: 1px solid rgba(148, 163, 184, 0.22);
-  border-radius: 10px; color: #e2e8f0; caret-color: #818cf8;
-}
-[data-testid="stTextInput"] input:focus, [data-testid="stNumberInput"] input:focus,
-[data-testid="stTextArea"] textarea:focus {
-  border-color: #818cf8; box-shadow: 0 0 0 3px rgba(129, 140, 248, 0.16);
-}
-[data-testid="stTextInput"] label, [data-testid="stNumberInput"] label,
-[data-testid="stTextArea"] label, [data-testid="stFileUploader"] label {
-  color: #a9b7d0 !important; font-weight: 500;
-}
-
-[data-testid="stFileUploaderDropzone"] {
-  background: rgba(15, 23, 42, 0.55);
-  border: 1.5px dashed rgba(148, 163, 184, 0.35);
-  border-radius: 14px; transition: border-color 0.15s ease;
-}
-[data-testid="stFileUploaderDropzone"]:hover { border-color: rgba(129, 140, 248, 0.8); }
-[data-testid="stFileUploaderDropzone"] button {
-  background: rgba(129, 140, 248, 0.16); border-radius: 8px;
-}
-
-[data-testid="stRadio"] > div { flex-wrap: wrap; gap: 0.45rem; }
-[data-testid="stRadio"] label {
-  background: rgba(148, 163, 184, 0.07); border: 1px solid rgba(148, 163, 184, 0.2);
-  border-radius: 999px; padding: 0.28rem 0.95rem; transition: all 0.15s ease; color: #cbd5e1;
-}
-[data-testid="stRadio"] label:has(input:checked) {
-  background: linear-gradient(92deg, #6366f1, #06b6d4); border-color: transparent; color: #fff;
-}
-
-[data-testid="stDataFrame"] {
-  border: 1px solid rgba(148, 163, 184, 0.2); border-radius: 12px; overflow: hidden;
-}
-
-[data-testid="stCaption"], .stCaption { color: #7c8db0; }
-
-[data-testid="stExpander"] {
-  border: 1px solid rgba(148, 163, 184, 0.18); border-radius: 12px;
-  background: rgba(148, 163, 184, 0.04);
-}
-[data-testid="stInfo"] {
-  background: rgba(59, 130, 246, 0.10); border: 1px solid rgba(96, 165, 250, 0.25);
-  border-radius: 12px; color: #bfdbfe;
-}
-
-.foot {
-  margin: 2.6rem 0 1rem; padding-top: 1.1rem;
-  border-top: 1px solid rgba(148, 163, 184, 0.15);
-  color: #5b6b8c; font-size: 0.8rem; text-align: center; letter-spacing: 0.04em;
-}
-
-::-webkit-scrollbar { width: 10px; height: 10px; }
-::-webkit-scrollbar-thumb { background: rgba(148, 163, 184, 0.25); border-radius: 8px; }
-
-/* ---------- animated background ---------- */
-[data-testid="stAppViewContainer"] { isolation: isolate; }
-.bg-fx { position: fixed; inset: 0; z-index: -1; pointer-events: none; overflow: hidden; }
-.bg-fx .orb { position: absolute; border-radius: 50%; filter: blur(80px); will-change: transform, opacity; }
-.bg-fx .orb-a {
-  width: 48vw; height: 48vw; left: -14vw; top: -16vw; opacity: 0.35;
-  background: radial-gradient(circle, rgba(99, 102, 241, 0.55), rgba(99, 102, 241, 0) 70%);
-  animation: driftA 26s ease-in-out infinite alternate;
-}
-.bg-fx .orb-b {
-  width: 40vw; height: 40vw; right: -12vw; top: 6vh; opacity: 0.30;
-  background: radial-gradient(circle, rgba(34, 211, 238, 0.5), rgba(34, 211, 238, 0) 70%);
-  animation: driftB 32s ease-in-out infinite alternate;
-}
-.bg-fx .orb-c {
-  width: 46vw; height: 46vw; left: 22vw; bottom: -18vw; opacity: 0.28;
-  background: radial-gradient(circle, rgba(168, 85, 247, 0.45), rgba(168, 85, 247, 0) 70%);
-  animation: driftC 38s ease-in-out infinite alternate;
-}
-.bg-fx .orb-d {
-  width: 30vw; height: 30vw; right: 12vw; bottom: 4vh; opacity: 0.26;
-  background: radial-gradient(circle, rgba(244, 63, 94, 0.4), rgba(244, 63, 94, 0) 70%);
-  animation: driftD 28s ease-in-out infinite alternate;
-}
-.bg-fx .orb-e {
-  width: 70vw; height: 70vw; left: 15vw; top: -30vw; opacity: 0.14;
-  background: conic-gradient(from 0deg, transparent, rgba(129, 140, 248, 0.5), transparent 32%, rgba(103, 232, 249, 0.4) 55%, transparent);
-  animation: spinSlow 70s linear infinite;
-}
-.bg-fx .grid {
-  position: absolute; inset: 0;
-  background-image:
-    linear-gradient(rgba(148, 163, 184, 0.07) 1px, transparent 1px),
-    linear-gradient(90deg, rgba(148, 163, 184, 0.07) 1px, transparent 1px);
-  background-size: 52px 52px;
-  -webkit-mask-image: radial-gradient(ellipse 90% 70% at 50% 0%, black 25%, transparent 78%);
-  mask-image: radial-gradient(ellipse 90% 70% at 50% 0%, black 25%, transparent 78%);
-  animation: gridScroll 75s linear infinite;
-}
-.bg-fx .slide { position: absolute; inset: 0; opacity: 0; animation: slideShow 45s ease-in-out infinite; }
-.bg-fx .slide.s1 {
-  background:
-    radial-gradient(52% 40% at 18% 22%, rgba(129, 140, 248, 0.26), transparent 62%),
-    radial-gradient(40% 34% at 86% 68%, rgba(34, 211, 238, 0.18), transparent 60%);
-  animation-delay: 0s;
-}
-.bg-fx .slide.s2 {
-  background:
-    radial-gradient(50% 42% at 82% 18%, rgba(168, 85, 247, 0.24), transparent 62%),
-    radial-gradient(44% 38% at 12% 74%, rgba(244, 63, 94, 0.15), transparent 60%);
-  animation-delay: 15s;
-}
-.bg-fx .slide.s3 {
-  background:
-    radial-gradient(54% 44% at 50% 30%, rgba(34, 211, 238, 0.22), transparent 64%),
-    radial-gradient(36% 30% at 8% 60%, rgba(99, 102, 241, 0.22), transparent 60%);
-  animation-delay: 30s;
-}
-
-@keyframes driftA {
-  from { transform: translate3d(0, 0, 0) scale(1); opacity: 0.25; }
-  to   { transform: translate3d(9vw, 7vh, 0) scale(1.18); opacity: 0.5; }
-}
-@keyframes driftB {
-  from { transform: translate3d(0, 0, 0) scale(1.1); opacity: 0.2; }
-  to   { transform: translate3d(-8vw, 10vh, 0) scale(0.95); opacity: 0.45; }
-}
-@keyframes driftC {
-  from { transform: translate3d(0, 0, 0) scale(1); opacity: 0.18; }
-  to   { transform: translate3d(-10vw, -8vh, 0) scale(1.22); opacity: 0.42; }
-}
-@keyframes driftD {
-  from { transform: translate3d(0, 0, 0) scale(1.05); opacity: 0.16; }
-  to   { transform: translate3d(6vw, -9vh, 0) scale(0.9); opacity: 0.38; }
-}
-@keyframes spinSlow { to { transform: rotate(360deg); } }
-@keyframes gridScroll { to { background-position: 52px 52px; } }
-@keyframes slideShow {
-  0% { opacity: 0; }
-  6% { opacity: 1; }
-  30% { opacity: 1; }
-  36% { opacity: 0; }
-  100% { opacity: 0; }
-}
-
-/* ---------- motion: title, cards, buttons ---------- */
-.hero h1 {
-  background-size: 220% auto;
-  animation: textFlow 9s ease-in-out infinite;
-}
-@keyframes textFlow {
-  0% { background-position: 0% 50%; }
-  50% { background-position: 100% 50%; }
-  100% { background-position: 0% 50%; }
-}
-
-.hero, [data-testid="stMetric"] { animation: riseIn 0.5s cubic-bezier(0.2, 0.7, 0.3, 1) both; }
-
-[data-testid="stVerticalBlockBorderWrapper"] {
-  animation: riseIn 0.5s cubic-bezier(0.2, 0.7, 0.3, 1) both;
-  transition: transform 0.25s ease, border-color 0.25s ease, box-shadow 0.25s ease;
-}
-[data-testid="stVerticalBlockBorderWrapper"]:hover {
-  transform: translateY(-3px);
-  border-color: rgba(129, 140, 248, 0.35);
-  box-shadow: 0 18px 40px -18px rgba(99, 102, 241, 0.35);
-}
-@keyframes riseIn {
-  from { opacity: 0; transform: translateY(14px); }
-  to   { opacity: 1; transform: translateY(0); }
-}
-
-[data-testid="stBaseButton-secondary"], .stButton > button, .stDownloadButton button {
-  position: relative; overflow: hidden;
-}
-[data-testid="stBaseButton-secondary"]::after, .stButton > button::after, .stDownloadButton button::after {
-  content: ""; position: absolute; top: 0; left: -130%; height: 100%; width: 55%;
-  background: linear-gradient(100deg, transparent, rgba(255, 255, 255, 0.28), transparent);
-  transform: skewX(-18deg); animation: shimmer 3.4s ease-in-out infinite;
-}
-@keyframes shimmer {
-  0% { left: -130%; }
-  55% { left: 130%; }
-  100% { left: 130%; }
-}
-
-@keyframes csSlideBlur {
-  0%   { filter: blur(0px); }
-  35%  { filter: blur(7px); }
-  75%  { filter: blur(3px); }
-  100% { filter: blur(0px); }
-}
-
-html, body { scroll-behavior: smooth; }
-
-@media (prefers-reduced-motion: reduce) {
-  .bg-fx .orb, .bg-fx .grid, .bg-fx .slide, .hero h1,
-  [data-testid="stVerticalBlockBorderWrapper"], [data-testid="stMetric"],
-  [data-testid="stBaseButton-secondary"]::after, .stButton button::after, .stDownloadButton button::after,
-  div[data-testid="stColumn"]:has(div[data-testid="stFileUploader"]) {
-    animation: none !important;
-  }
-  [data-testid="stVerticalBlockBorderWrapper"] { transform: none !important; }
-}
-
-@media (max-width: 720px) {
-  [data-testid="stHorizontalBlock"]:has(div[data-testid="stFileUploader"]) {
-    flex-direction: column;
-  }
-  [data-testid="stHorizontalBlock"]:has(div[data-testid="stFileUploader"]) > [data-testid="stColumn"] {
-    width: 100% !important;
-    max-width: 100% !important;
-    flex-basis: auto !important;
-  }
-  [data-testid="stColumn"]:has(div[data-testid="stFileUploader"]) {
-    transform: none !important;
-    animation: none !important;
-  }
-  [data-testid="stHorizontalBlock"]:has([data-testid="stMetric"]) {
-    display: grid;
-    grid-template-columns: repeat(2, 1fr);
+.hero-badge {
+    display: inline-flex;
+    align-items: center;
     gap: 0.5rem;
-  }
-  [data-testid="stHorizontalBlock"]:has(input[placeholder^="Note for marker"]) {
-    flex-direction: column;
-  }
-  .hero h1 { font-size: 1.7rem !important; }
-  .hero .badge { font-size: 0.62rem !important; }
+    background: rgba(99, 102, 241, 0.15);
+    border: 1px solid rgba(99, 102, 241, 0.3);
+    color: var(--primary-light);
+    font-size: 0.75rem;
+    font-weight: 600;
+    padding: 0.4rem 0.9rem;
+    border-radius: 50px;
+    margin-bottom: 1rem;
+    backdrop-filter: blur(10px);
+}
+.hero-badge-icon {
+    width: 16px;
+    height: 16px;
+}
+.hero h1 {
+    font-family: 'Inter', sans-serif;
+    font-weight: 800;
+    font-size: 2.8rem;
+    background: linear-gradient(135deg, var(--primary-light) 0%, var(--secondary-light) 100%);
+    -webkit-background-clip: text;
+    -webkit-text-fill-color: transparent;
+    background-clip: text;
+    margin-bottom: 1rem;
+    letter-spacing: -0.02em;
+    line-height: 1.1;
+    position: relative;
+    display: inline-block;
+}
+.hero h1::after {
+    content: '';
+    position: absolute;
+    bottom: -8px;
+    left: 50%;
+    transform: translateX(-50%);
+    width: 60px;
+    height: 4px;
+    background: linear-gradient(90deg, var(--primary), var(--secondary));
+    border-radius: 2px;
+}
+.hero p.sub {
+    font-size: 1.1rem;
+    color: var(--text-secondary);
+    line-height: 1.6;
+    max-width: 700px;
+    margin: 0 auto 2rem;
+    opacity: 0.9;
+}
+.hero-divider {
+    height: 1px;
+    background: linear-gradient(90deg, transparent, rgba(129, 140, 248, 0.4), transparent);
+    margin: 0 auto;
+    width: 80%;
+    max-width: 400px;
+    position: relative;
+}
+.hero-divider::before, .hero-divider::after {
+    content: '';
+    position: absolute;
+    top: 50%;
+    transform: translateY(-50%);
+    width: 10px;
+    height: 10px;
+    background: var(--primary);
+    border-radius: 50%;
+}
+.hero-divider::before { left: 0; }
+.hero-divider::after { right: 0; }
+
+/* Glassmorphism card */
+.glass-card {
+    background: var(--card-bg);
+    border: 1px solid var(--border);
+    border-radius: var(--radius-lg);
+    padding: 1.5rem;
+    backdrop-filter: blur(10px);
+    box-shadow: var(--shadow-md);
+    transition: var(--transition);
+    position: relative;
+    overflow: hidden;
+}
+.glass-card::before {
+    content: '';
+    position: absolute;
+    top: 0;
+    left: 0;
+    right: 0;
+    height: 1px;
+    background: linear-gradient(90deg, transparent, rgba(255, 255, 255, 0.1), transparent);
+}
+.glass-card:hover {
+    transform: translateY(-2px);
+    box-shadow: var(--shadow-lg);
+    border-color: rgba(99, 102, 241, 0.3);
+}
+.glass-card-header {
+    display: flex;
+    align-items: center;
+    gap: 0.75rem;
+    margin-bottom: 1rem;
+    padding-bottom: 0.75rem;
+    border-bottom: 1px solid var(--border-light);
+}
+.glass-card-icon {
+    width: 24px;
+    height: 24px;
+    background: linear-gradient(135deg, var(--primary), var(--secondary));
+    border-radius: var(--radius-sm);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 0.9rem;
+    color: white;
+}
+.glass-card-title {
+    font-size: 1.25rem;
+    font-weight: 600;
+    color: var(--text-primary);
+    letter-spacing: -0.01em;
+}
+.glass-card-description {
+    color: var(--text-muted);
+    font-size: 0.9rem;
+    margin-top: 0.5rem;
+}
+
+/* Metric cards */
+.metric-container {
+    background: var(--card-bg);
+    border: 1px solid var(--border);
+    border-radius: var(--radius-lg);
+    padding: 1.25rem;
+    text-align: center;
+    transition: var(--transition);
+    backdrop-filter: blur(10px);
+}
+.metric-container:hover {
+    transform: translateY(-2px);
+    box-shadow: var(--shadow-md);
+    border-color: rgba(99, 102, 241, 0.25);
+}
+.metric-label {
+    font-size: 0.85rem;
+    font-weight: 500;
+    color: var(--text-muted);
+    text-transform: uppercase;
+    letter-spacing: 0.05em;
+    margin-bottom: 0.5rem;
+}
+.metric-value {
+    font-family: 'JetBrains Mono', monospace;
+    font-size: 2rem;
+    font-weight: 700;
+    background: linear-gradient(135deg, var(--primary-light), var(--secondary-light));
+    -webkit-background-clip: text;
+    -webkit-text-fill-color: transparent;
+    background-clip: text;
+    line-height: 1;
+}
+.metric-change {
+    font-size: 0.85rem;
+    font-weight: 500;
+    margin-top: 0.25rem;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 0.25rem;
+}
+.metric-change.positive { color: var(--success); }
+.metric-change.negative { color: var(--error); }
+.metric-change.neutral { color: var(--text-muted); }
+
+/* Buttons */
+.stButton > button {
+    border-radius: var(--radius-md);
+    font-weight: 600;
+    transition: var(--transition);
+    border: none;
+    position: relative;
+    overflow: hidden;
+    font-size: 0.9rem;
+    padding: 0.5rem 1.25rem;
+}
+.stButton > button::before {
+    content: '';
+    position: absolute;
+    top: 0;
+    left: -100%;
+    width: 100%;
+    height: 100%;
+    background: linear-gradient(
+        90deg,
+        transparent,
+        rgba(255, 255, 255, 0.2),
+        transparent
+    );
+    transition: 0.5s;
+}
+.stButton > button:hover::before {
+    left: 100%;
+}
+.stButton > button[kind="primary"] {
+    background: linear-gradient(135deg, var(--primary), var(--secondary));
+    color: white;
+    box-shadow: var(--shadow-md);
+}
+.stButton > button[kind="primary"]:hover {
+    transform: translateY(-2px);
+    box-shadow: 0 8px 25px rgba(99, 102, 241, 0.3);
+}
+.stButton > button[kind="secondary"] {
+    background: var(--card-bg);
+    color: var(--text-primary);
+    border: 1px solid var(--border);
+}
+.stButton > button[kind="secondary"]:hover {
+    background: rgba(99, 102, 241, 0.05);
+    transform: translateY(-1px);
+}
+
+/* Inputs */
+.stTextInput > div > div > input,
+.stNumberInput > div > div > input,
+.stTextArea > div > div > textarea {
+    background: var(--card-bg);
+    border: 1px solid var(--border);
+    border-radius: var(--radius-md);
+    color: var(--text-primary);
+    font-size: 0.9rem;
+    padding: 0.75rem;
+    transition: var(--transition);
+}
+.stTextInput > div > div > input:focus,
+.stNumberInput > div > div > input:focus,
+.stTextArea > div > div > textarea:focus {
+    border-color: var(--primary-light);
+    box-shadow: 0 0 0 2px rgba(99, 102, 241, 0.2);
+}
+.stTextInput > label,
+.stNumberInput > label,
+.stTextArea > label {
+    color: var(--text-secondary);
+    font-weight: 500;
+    margin-bottom: 0.25rem;
+}
+
+/* File uploader */
+.stFileUploader > div {
+    border: 2px dashed var(--border);
+    border-radius: var(--radius-lg);
+    padding: 2rem;
+    text-align: center;
+    background: var(--card-bg);
+    transition: var(--transition);
+}
+.stFileUploader > div:hover {
+    border-color: var(--primary-light);
+    background: rgba(99, 102, 241, 0.05);
+    transform: scale(1.02);
+}
+.stFileUploader > div > div > div > div {
+    color: var(--text-muted);
+}
+.stFileUploader > div > div > div > div > div {
+    color: var(--primary);
+    font-weight: 600;
+}
+
+/* Radio buttons */
+.stRadio > div {
+    gap: 1rem;
+}
+.stRadio > div > label {
+    background: var(--card-bg);
+    border: 1px solid var(--border);
+    border-radius: var(--radius-md);
+    padding: 0.75rem 1rem;
+    font-weight: 500;
+    transition: var(--transition);
+    cursor: pointer;
+}
+.stRadio > div > label:hover {
+    background: rgba(99, 102, 241, 0.05);
+    border-color: var(--primary-light);
+}
+.stRadio > div > label[data-checked="true"] {
+    background: linear-gradient(135deg, rgba(99, 102, 241, 0.1), rgba(6, 182, 212, 0.1));
+    border: 1px solid var(--primary);
+    color: var(--text-primary);
+}
+
+/* Expander */
+.streamlit-expanderHeader {
+    background: var(--card-bg);
+    border: 1px solid var(--border);
+    border-radius: var(--radius-md);
+    font-weight: 600;
+    color: var(--text-primary);
+    padding: 0.75rem 1rem;
+}
+.streamlit-expanderHeader:hover {
+    background: rgba(99, 102, 241, 0.05);
+}
+.streamlit-expanderContent {
+    background: var(--card-bg-light);
+    border: 1px solid var(--border-light);
+    border-radius: 0 0 var(--radius-md) var(--radius-md);
+    margin-top: -1px;
+    padding: 1rem;
+}
+
+/* Info/warning/error boxes */
+.stAlert {
+    border-radius: var(--radius-md);
+    border: none;
+    padding: 1rem;
+    font-weight: 500;
+}
+.stAlert > div {
+    padding: 0.5rem 1rem;
+    border-radius: var(--radius-sm);
+    font-weight: 500;
+}
+.stInfo {
+    background: rgba(99, 102, 241, 0.1);
+    border-left: 3px solid var(--primary);
+    color: var(--primary-light);
+}
+.stWarning {
+    background: rgba(245, 158, 11, 0.1);
+    border-left: 3px solid var(--accent);
+    color: var(--accent-light);
+}
+.stError {
+    background: rgba(239, 68, 68, 0.1);
+    border-left: 3px solid var(--error);
+    color: var(--error-light);
+}
+.stSuccess {
+    background: rgba(16, 185, 129, 0.1);
+    border-left: 3px solid var(--success);
+    color: var(--success-light);
+}
+
+/* Dataframe */
+[data-testid="stDataFrame"] {
+    border-radius: var(--radius-lg);
+    overflow: hidden;
+    box-shadow: var(--shadow-sm);
+}
+[data-testid="stDataFrame"] > div {
+    border: none !important;
+}
+[data-testid="stDataFrame"] thead th {
+    background: var(--card-bg);
+    color: var(--text-primary);
+    font-weight: 600;
+    border-bottom: 1px solid var(--border);
+    padding: 1rem;
+    text-align: left;
+    font-size: 0.9rem;
+}
+[data-testid="stDataFrame"] tbody td {
+    background: var(--card-bg-light);
+    border-bottom: 1px solid rgba(0, 0, 0, 0.05);
+    padding: 0.75rem 1rem;
+    font-size: 0.9rem;
+}
+[data-testid="stDataFrame"] tbody tr:hover td {
+    background: rgba(99, 102, 241, 0.05);
+}
+
+/* Tabs */
+.stTabs [data-baseweb="tab-list"] {
+    gap: 0.5rem;
+    background: var(--card-bg);
+    border-radius: var(--radius-md);
+    padding: 0.25rem;
+}
+.stTabs [data-baseweb="tab"] {
+    background: transparent;
+    border-radius: var(--radius-sm);
+    color: var(--text-muted);
+    font-weight: 500;
+    padding: 0.5rem 1rem;
+    transition: var(--transition);
+}
+.stTabs [aria-selected="true"] {
+    background: var(--primary);
+    color: white;
+    box-shadow: var(--shadow-sm);
+}
+
+/* Progress bar */
+.stProgress > div > div > div > div {
+    background: linear-gradient(90deg, var(--primary), var(--secondary));
+    border-radius: var(--radius-sm);
+}
+
+/* Spinner */
+.stSpinner > div {
+    border-color: var(--primary) transparent var(--primary) transparent;
+}
+.stSpinner > div::after {
+    content: '';
+}
+
+/* Footer */
+.footer {
+    text-align: center;
+    padding: 2rem 1rem;
+    color: var(--text-muted);
+    font-size: 0.85rem;
+    border-top: 1px solid var(--border-light);
+    margin-top: 3rem;
+}
+.footer a {
+    color: var(--primary-light);
+    text-decoration: none;
+}
+.footer a:hover {
+    text-decoration: underline;
+}
+
+/* Section headers */
+.section-header {
+    display: flex;
+    align-items: center;
+    gap: 0.75rem;
+    margin: 2rem 0 1.5rem;
+    padding-bottom: 0.5rem;
+    border-bottom: 1px solid var(--border-light);
+}
+.section-header-icon {
+    width: 28px;
+    height: 28px;
+    background: linear-gradient(135deg, var(--primary), var(--secondary));
+    border-radius: var(--radius-sm);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 1rem;
+    color: white;
+}
+.section-header-title {
+    font-size: 1.5rem;
+    font-weight: 600;
+    color: var(--text-primary);
+    letter-spacing: -0.01em;
+}
+
+/* Badges */
+.badge {
+    display: inline-flex;
+    align-items: center;
+    gap: 0.25rem;
+    font-size: 0.75rem;
+    font-weight: 600;
+    padding: 0.25rem 0.6rem;
+    border-radius: var(--radius-sm);
+}
+.badge-primary {
+    background: rgba(99, 102, 241, 0.2);
+    color: var(--primary-light);
+    border: 1px solid rgba(99, 102, 241, 0.3);
+}
+.badge-secondary {
+    background: rgba(6, 182, 212, 0.2);
+    color: var(--secondary-light);
+    border: 1px solid rgba(6, 182, 212, 0.3);
+}
+.badge-accent {
+    background: rgba(245, 158, 11, 0.2);
+    color: var(--accent-light);
+    border: 1px solid rgba(245, 158, 11, 0.3);
+}
+.badge-success {
+    background: rgba(16, 185, 129, 0.2);
+    color: var(--success-light);
+    border: 1px solid rgba(16, 185, 129, 0.3);
+}
+.badge-warning {
+    background: rgba(245, 158, 11, 0.2);
+    color: var(--accent-light);
+    border: 1px solid rgba(245, 158, 11, 0.3);
+}
+.badge-error {
+    background: rgba(239, 68, 68, 0.2);
+    color: var(--error-light);
+    border: 1px solid rgba(239, 68, 68, 0.3);
+}
+
+/* Animated background elements */
+.orb {
+    position: absolute;
+    border-radius: 50%;
+    filter: blur(80px);
+    opacity: 0.15;
+    pointer-events: none;
+}
+.orb-1 {
+    width: 300px;
+    height: 300px;
+    background: radial-gradient(circle, rgba(99, 102, 241, 0.3), transparent 70%);
+    top: -10%;
+    left: -10%;
+    animation: drift 15s ease-in-out infinite;
+}
+.orb-2 {
+    width: 200px;
+    height: 200px;
+    background: radial-gradient(circle, rgba(6, 182, 212, 0.3), transparent 70%);
+    bottom: -10%;
+    right: -10%;
+    animation: drift 20s ease-in-out infinite reverse;
+}
+@keyframes drift {
+    0%, 100% { transform: translate(0, 0) rotate(0deg); }
+    33% { transform: translate(30px, -30px) rotate(120deg); }
+    66% { transform: translate(-30px, 30px) rotate(240deg); }
+}
+
+/* Responsive design */
+@media (max-width: 768px) {
+    .hero h1 {
+        font-size: 2.2rem;
+    }
+    .hero p.sub {
+        font-size: 1rem;
+    }
+    .glass-card {
+        padding: 1rem;
+    }
+    .section-header {
+        margin: 1.5rem 0 1rem;
+    }
+    .section-header-title {
+        font-size: 1.25rem;
+    }
 }
 </style>
 """
 
 _HERO = """
 <div class="hero">
-  <span class="badge">EVIDENCE CAPTURE ASSISTANT</span>
+  <div class="hero-badge">
+    <span class="hero-badge-icon">🔍</span>
+    EVIDENCE CAPTURE ASSISTANT
+  </div>
   <h1>Crime Scene AI</h1>
-  <p class="sub">Upload crime-scene photos — detections, stain candidates and the narrative are a
-  <b>suggestion for triage</b>; nothing is logged until an officer confirms it (evidence boundary).</p>
-  <hr class="divider">
+  <p class="sub">Upload crime-scene photos — detections, stain candidates and the narrative are a <b>suggestion for triage</b>; nothing is logged until an officer confirms it (evidence boundary).</p>
+  <div class="hero-divider"></div>
 </div>
 """
 
 st.markdown(_CSS, unsafe_allow_html=True)
 st.markdown(
     '<div class="bg-fx">'
-    '<div class="orb orb-a"></div><div class="orb orb-b"></div><div class="orb orb-c"></div>'
-    '<div class="orb orb-d"></div><div class="orb orb-e"></div>'
-    '<div class="grid"></div>'
-    '<div class="slide s1"></div><div class="slide s2"></div><div class="slide s3"></div>'
-    "</div>",
+    '<div class="orb orb-1"></div><div class="orb orb-2"></div>'
+    '</div>',
     unsafe_allow_html=True,
 )
 st.markdown(_HERO, unsafe_allow_html=True)
@@ -595,7 +924,7 @@ def confirm(officer_id, narrative, lat, lng):
 
 
 def case_card(c):
-    md = f"## Case `{c['id']}` — confirmed\n"
+    md = f'<div class="section-header"><div class="section-header-icon">📄</div><div class="section-header-title">Case `{c["id"]}` — confirmed</div></div>\n'
     md += f"- Officer: `{c['officer_id']}` · logged {c['created_at']}\n"
     photos = c.get("photos") or [{"name": "(archive)", "image_id": c.get("image_id")}]
     md += "- Photos: " + ", ".join(f"`{p['name']}` (`{p['image_id']}`)" for p in photos) + "\n"
@@ -790,13 +1119,17 @@ def _on_canvas_click():
 col1, col2 = st.columns([1, 2])
 
 merged = st.session_state.merged
-images = st.session_state.images
-if merged:
-    m1, m2, m3, m4 = st.columns(4)
-    m1.metric("Photos", len(images))
-    m2.metric("Objects", len(merged.get("objects", [])))
-    m3.metric("Stain candidates", len(merged.get("stains", [])))
-    m4.metric("Evidence markers", len(st.session_state.markers))
+            images = st.session_state.images
+            if merged:
+                m1, m2, m3, m4 = st.columns(4)
+                with m1:
+                    st.markdown('<div class="metric-container"><div class="metric-label">Photos</div><div class="metric-value">' + str(len(images)) + '</div></div>', unsafe_allow_html=True)
+                with m2:
+                    st.markdown('<div class="metric-container"><div class="metric-label">Objects</div><div class="metric-value">' + str(len(merged.get("objects", []))) + '</div></div>', unsafe_allow_html=True)
+                with m3:
+                    st.markdown('<div class="metric-container"><div class="metric-label">Stain candidates</div><div class="metric-value">' + str(len(merged.get("stains", []))) + '</div></div>', unsafe_allow_html=True)
+                with m4:
+                    st.markdown('<div class="metric-container"><div class="metric-label">Evidence markers</div><div class="metric-value">' + str(len(st.session_state.markers)) + '</div></div>', unsafe_allow_html=True)
 
 with col1:
     with st.container(border=True):
@@ -891,20 +1224,22 @@ with col2:
         st.caption("Preview — click 'Analyze all photos' to run the triage pipeline.")
 
 if merged:
-    with st.container(border=True):
-        st.caption(f"photos: {len(st.session_state.images)} · "
-                   f"evidence markers: {len(st.session_state.markers)}")
+        with st.container(border=True):
+            st.markdown('<div class="section-header"><div class="section-header-icon">📷</div><div class="section-header-title">Scene Overview</div></div>', unsafe_allow_html=True)
+            st.caption(f"photos: {len(st.session_state.images)} · "
+                       f"evidence markers: {len(st.session_state.markers)}")
 
-        st.subheader("Objects detected")
-        st.dataframe(_df(merged.get("objects", []),
-                         ["class", "category", "confidence", "source", "photo"]),
-                     width="stretch", hide_index=True)
-        st.subheader("Blood-like stain candidates")
-        st.dataframe(_df(merged.get("stains", []),
-                         ["class", "confidence", "area_pct", "photo"]),
-                     width="stretch", hide_index=True)
+            st.markdown('<div class="section-header"><div class="section-header-icon">🔍</div><div class="section-header-title">Objects Detected</div></div>', unsafe_allow_html=True)
+            st.dataframe(_df(merged.get("objects", []),
+                             ["class", "category", "confidence", "source", "photo"]),
+                        width="stretch", hide_index=True)
+            st.markdown('<div class="section-header"><div class="section-header-icon">🩸</div><div class="section-header-title">Blood-like Stain Candidates</div></div>', unsafe_allow_html=True)
+            st.dataframe(_df(merged.get("stains", []),
+                             ["class", "confidence", "area_pct", "photo"]),
+                        width="stretch", hide_index=True)
 
         tamper = merged.get("tamper", {})
+        st.markdown(f'<div class="section-header"><div class="section-header-icon">🔒</div><div class="section-header-title">Tamper Check</div></div>', unsafe_allow_html=True)
         st.markdown(f"**Tamper check:** `{tamper.get('flag', 'inconclusive')}` "
                     f"(ELA score {tamper.get('ela_score', 'n/a')}) — heuristic, never a verdict")
         notes = merged.get("processing_notes", [])
@@ -918,13 +1253,15 @@ if merged:
                 mode_txt = "offline rule-based draft (no API key configured)"
             else:
                 mode_txt = f"LLM draft ({source} / {model})"
-            st.markdown("## AI observations and suggestions (triage draft)")
+            st.markdown('<div class="section-header"><div class="section-header-icon">🤖</div><div class="section-header-title">AI Observations & Suggestions</div></div>', unsafe_allow_html=True)
             st.caption(f"Draft by: {mode_txt} — suggestions only, never evidence; an officer signs the final case.")
             flags = sug.get("anomaly_flags") or []
             steps = sug.get("next_steps") or []
             if flags:
+                st.markdown('<div class="section-header"><div class="section-header-icon">⚠️</div><div class="section-header-title">Anomaly Flags</div></div>', unsafe_allow_html=True)
                 st.markdown("**Anomaly flags:**\n" + "\n".join(f"- {f}" for f in flags))
             if steps:
+                st.markdown('<div class="section-header"><div class="section-header-icon">➡️</div><div class="section-header-title">Suggested Next Steps</div></div>', unsafe_allow_html=True)
                 st.markdown("**Suggested next steps:**\n" + "\n".join(f"- {s}" for s in steps))
             if sug.get("narrative"):
                 with st.expander("AI-drafted observation report"):
@@ -933,7 +1270,7 @@ if merged:
                         st.session_state.narrative = sug["narrative"]
                         st.rerun()
 
-        st.markdown("## Officer confirmation (human-in-the-loop)")
+        st.markdown('<div class="section-header"><div class="section-header-icon">✅</div><div class="section-header-title">Officer Confirmation</div></div>', unsafe_allow_html=True)
         st.caption(f"Marks {len(st.session_state.markers)} evidence markers")
         narrative = st.text_area(
             "Officer narrative (write your own account; nothing is logged until you confirm)",
@@ -955,17 +1292,17 @@ if st.session_state.last_case:
                        file_name=f"case-{detail['id']}.pdf", mime="application/pdf",
                        key="dl_pdf_report")
 
-with st.container(border=True):
-    st.markdown("## Past cases")
-    rows = []
-    for c in db.list_cases():
-        rows.append({"id": c["id"], "officer": c["officer_id"], "created_at": c["created_at"],
-                     "objects": c["object_count"], "stains": c["stain_count"],
-                     "markers": len(c.get("evidence_markers", []))})
-    if rows:
-        st.dataframe(pd.DataFrame(rows), width="stretch", hide_index=True)
-    else:
-        st.caption("No cases logged yet.")
+st.markdown('<div class="section-header"><div class="section-header-icon">📁</div><div class="section-header-title">Past Cases</div></div>', unsafe_allow_html=True)
+        with st.container(border=True):
+            rows = []
+            for c in db.list_cases():
+                rows.append({"id": c["id"], "officer": c["officer_id"], "created_at": c["created_at"],
+                             "objects": c["object_count"], "stains": c["stain_count"],
+                             "markers": len(c.get("evidence_markers", []))})
+            if rows:
+                st.dataframe(pd.DataFrame(rows), width="stretch", hide_index=True)
+            else:
+                st.caption("No cases logged yet.")
 
 st.markdown(
     '<div class="foot">Crime Scene AI · offline-safe triage draft · '

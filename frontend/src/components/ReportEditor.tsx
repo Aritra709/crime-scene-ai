@@ -1,16 +1,21 @@
 import { useMemo, useState } from "react";
-import type { Analysis, CasePayload, Detection } from "../types";
+import type { Analysis, VideoAnalysis, CasePayload, Detection } from "../types";
 import { createCase } from "../api";
 import Badge from "./Badge";
 import ImageAnnotator from "./ImageAnnotator";
+import VideoAnnotator from "./VideoAnnotator";
 
 interface Props {
-  analysis: Analysis;
+  analysis: Analysis | VideoAnalysis;
   onSubmitted: (payload: CasePayload) => void;
   onDiscard: () => void;
 }
 
-function mergedItems(analysis: Analysis): Detection[] {
+function isVideoAnalysis(analysis: Analysis | VideoAnalysis): analysis is VideoAnalysis {
+  return "video_id" in analysis;
+}
+
+function mergedItems(analysis: Analysis | VideoAnalysis): Detection[] {
   return [
     ...analysis.objects.map((o) => ({ ...o, category: o.category || "object" })),
     ...analysis.stains.map((s) => ({ ...s, category: "stain" })),
@@ -20,6 +25,7 @@ function mergedItems(analysis: Analysis): Detection[] {
 
 export default function ReportEditor({ analysis, onSubmitted, onDiscard }: Props) {
   const items = useMemo(() => mergedItems(analysis), [analysis]);
+  const isVideo = isVideoAnalysis(analysis);
 
   const [included, setIncluded] = useState<Set<string>>(
     () => new Set(items.map((i) => i.id)),
@@ -56,7 +62,7 @@ export default function ReportEditor({ analysis, onSubmitted, onDiscard }: Props
     const all = items.filter((i) => included.has(i.id));
     const payload: CasePayload = {
       officer_id: analysis.officer_id ?? "",
-      image_id: analysis.image_id,
+      image_id: isVideo ? analysis.video_id : analysis.image_id,
       gps: analysis.metadata.gps ?? null,
       captured_at: analysis.metadata.captured_at ?? null,
       narrative,
@@ -107,14 +113,24 @@ export default function ReportEditor({ analysis, onSubmitted, onDiscard }: Props
           suggestion carrying a confidence score. Confirm, re-label or remove items; the
           final report is yours.
         </p>
-        <ImageAnnotator
-          imageUrl={analysis.image_url}
-          width={analysis.width}
-          height={analysis.height}
-          items={items}
-          hiddenIds={new Set()}
-          onToggle={() => void 0}
-        />
+        {isVideo ? (
+          <VideoAnnotator
+            videoUrl={analysis.video_url}
+            width={analysis.width}
+            items={items}
+            hiddenIds={new Set()}
+            onToggle={() => void 0}
+          />
+        ) : (
+          <ImageAnnotator
+            imageUrl={analysis.image_url}
+            width={analysis.width}
+            height={analysis.height}
+            items={items}
+            hiddenIds={new Set()}
+            onToggle={() => void 0}
+          />
+        )}
       </div>
 
       <div className="card">

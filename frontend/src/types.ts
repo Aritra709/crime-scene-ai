@@ -15,6 +15,8 @@ export interface Detection {
   basis?: string[];
   area_pct?: number;
   text?: string;
+  frame_idx?: number;
+  person_id?: string;
 }
 
 export interface TamperReport {
@@ -52,6 +54,11 @@ export interface Analysis {
   llm: LlmResult;
   processing_notes: string[];
   officer_id?: string;
+}
+
+export interface VideoAnalysis extends Analysis {
+  video_id: string;
+  video_url: string;
 }
 
 export interface CaseSummary {
