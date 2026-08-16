@@ -67,9 +67,9 @@ _CSS = """
     --secondary: #06b6d4;
     --secondary-light: #67e8f9;
     --secondary-dark: #0891b2;
-    --accent: #f59e0b;
-    --accent-light: #fbbf24;
-    --accent-dark: #d97706;
+    --accent: #06b6d4;
+    --accent-light: #67e8f9;
+    --accent-dark: #0891b2;
     --success: #10b981;
     --warning: #f59e0b;
     --error: #ef4444;
@@ -774,20 +774,20 @@ def annotate(img_bgr, analysis):
     """Draw detection boxes (solid) + stain candidates (dashed) on one image."""
     out = img_bgr.copy()
     colors = {
-        "person": (0, 200, 0),
-        "weapon": (0, 0, 255),
-        "vehicle": (255, 128, 0),
-        "container": (0, 200, 255),
-        "personal item": (255, 0, 255),
-        "electronic device": (200, 0, 200),
-        "discarded item": (180, 180, 0),
+        "person": (0, 255, 0),       # bright green
+        "weapon": (0, 0, 255),       # red
+        "vehicle": (255, 100, 0),    # blue
+        "container": (0, 255, 255),  # cyan
+        "personal item": (255, 0, 255), # magenta
+        "electronic device": (200, 0, 200), # purple
+        "discarded item": (0, 255, 200),  # teal
     }
     for d in analysis.get("objects", []):
         b = d.get("bbox")
         if not b:
             continue
         x1, y1, x2, y2 = (int(round(b[k])) for k in ("x1", "y1", "x2", "y2"))
-        color = colors.get(d.get("category"), (0, 255, 255))
+        color = colors.get(d.get("category"), (0, 255, 128))  # green-cyan default
         cv2.rectangle(out, (x1, y1), (x2, y2), color, 2)
         _label_chip(out, x1, y1, x2, y2, f"{d.get('class', '?')} {_pct(d.get('confidence', 0))}", color)
     for s in analysis.get("stains", []):
