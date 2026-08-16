@@ -2,3 +2,4 @@
 # Install AFTER requirements.txt. First YOLO run downloads yolov8n.pt (~6 MB) from GitHub.
 ultralytics>=8.1
 pytesseract>=0.3
+filterpy>=1.4
