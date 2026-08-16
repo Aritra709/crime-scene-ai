@@ -5,3 +5,4 @@ Pillow>=10.0
 onnxruntime>=1.18
 streamlit-image-coordinates>=0.3
 fpdf2>=2.7
+filterpy>=1.4
