@@ -1119,17 +1119,17 @@ def _on_canvas_click():
 col1, col2 = st.columns([1, 2])
 
 merged = st.session_state.merged
-            images = st.session_state.images
-            if merged:
-                m1, m2, m3, m4 = st.columns(4)
-                with m1:
-                    st.markdown('<div class="metric-container"><div class="metric-label">Photos</div><div class="metric-value">' + str(len(images)) + '</div></div>', unsafe_allow_html=True)
-                with m2:
-                    st.markdown('<div class="metric-container"><div class="metric-label">Objects</div><div class="metric-value">' + str(len(merged.get("objects", []))) + '</div></div>', unsafe_allow_html=True)
-                with m3:
-                    st.markdown('<div class="metric-container"><div class="metric-label">Stain candidates</div><div class="metric-value">' + str(len(merged.get("stains", []))) + '</div></div>', unsafe_allow_html=True)
-                with m4:
-                    st.markdown('<div class="metric-container"><div class="metric-label">Evidence markers</div><div class="metric-value">' + str(len(st.session_state.markers)) + '</div></div>', unsafe_allow_html=True)
+images = st.session_state.images
+if merged:
+    m1, m2, m3, m4 = st.columns(4)
+    with m1:
+        st.markdown('<div class="metric-container"><div class="metric-label">Photos</div><div class="metric-value">' + str(len(images)) + '</div></div>', unsafe_allow_html=True)
+    with m2:
+        st.markdown('<div class="metric-container"><div class="metric-label">Objects</div><div class="metric-value">' + str(len(merged.get("objects", []))) + '</div></div>', unsafe_allow_html=True)
+    with m3:
+        st.markdown('<div class="metric-container"><div class="metric-label">Stain candidates</div><div class="metric-value">' + str(len(merged.get("stains", []))) + '</div></div>', unsafe_allow_html=True)
+    with m4:
+        st.markdown('<div class="metric-container"><div class="metric-label">Evidence markers</div><div class="metric-value">' + str(len(st.session_state.markers)) + '</div></div>', unsafe_allow_html=True)
 
 with col1:
     with st.container(border=True):
@@ -1293,16 +1293,16 @@ if st.session_state.last_case:
                        key="dl_pdf_report")
 
 st.markdown('<div class="section-header"><div class="section-header-icon">📁</div><div class="section-header-title">Past Cases</div></div>', unsafe_allow_html=True)
-        with st.container(border=True):
-            rows = []
-            for c in db.list_cases():
-                rows.append({"id": c["id"], "officer": c["officer_id"], "created_at": c["created_at"],
-                             "objects": c["object_count"], "stains": c["stain_count"],
-                             "markers": len(c.get("evidence_markers", []))})
-            if rows:
-                st.dataframe(pd.DataFrame(rows), width="stretch", hide_index=True)
-            else:
-                st.caption("No cases logged yet.")
+with st.container(border=True):
+    rows = []
+    for c in db.list_cases():
+        rows.append({"id": c["id"], "officer": c["officer_id"], "created_at": c["created_at"],
+                     "objects": c["object_count"], "stains": c["stain_count"],
+                     "markers": len(c.get("evidence_markers", []))})
+    if rows:
+        st.dataframe(pd.DataFrame(rows), width="stretch", hide_index=True)
+    else:
+        st.caption("No cases logged yet.")
 
 st.markdown(
     '<div class="foot">Crime Scene AI · offline-safe triage draft · '
